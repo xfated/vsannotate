@@ -3,6 +3,7 @@
   "displayName": "VsAnnotate",
   "description": "Write personal notes on code snippets",
   "version": "0.0.1",
+  "publisher": "xfated",
   "engines": {
     "vscode": "^1.54.0"
   },
@@ -14,10 +15,24 @@
   "contributes": {
     "commands": [
       {
-        "command": "vsannotate.helloWorld",
-        "title": "Hello World"
+        "command": "vsannotate.showAnnotations",
+        "title": "Show Annotations"
+      },
+      {
+        "command": "vsannotate.addAnnotation",
+        "title": "Add note"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "vsannotate.addAnnotation",
+          "group": "z_commands",
+          "when": "editorHasSelection"
+        }
+      ]
+  
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",

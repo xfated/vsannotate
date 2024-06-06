@@ -2,6 +2,12 @@
 
 This is the README for your extension "vsannotate". After writing up a brief description, we recommend including the following sections.
 
+## Getting started with development
+1. Go to `src/extension.ts`
+2. Run `Debug: Start Debugging...` from the Command Palette (Cmd + Shift + P)
+3. Use `Reload Window` from Command Palette to refresh changes
+
+
 ## Features
 
 Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
