@@ -1,7 +1,7 @@
 // Service class to execute actions on notes
 
 import * as vscode from 'vscode';
-import type { FileNotes, NoteData } from './types';
+import type { FileNotes, LineData, Note, NoteData } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 class NoteManager {
@@ -20,6 +20,25 @@ class NoteManager {
         return path
     }
 
+    // User helpers
+    async getUserNoteInput(lineData: LineData): Promise<string> {
+        const notesAtLine = this.getNotesAtLine(lineData.line.lineNumber)
+        const defaultValue = notesAtLine.length == 0 ? '' : notesAtLine[0].note
+         
+        // Get user note
+		const result = await vscode.window.showInputBox({
+            value: defaultValue,
+			placeHolder: 'Add your note',
+		})
+		return`${result}`.trim()
+    }
+     
+    // Modification
+    /**
+     * Add a note at a line
+     * @param lineNumber line number the cursor is add
+     * @param note note details
+     */
     addNote(lineNumber: number, note: NoteData): void {
         const lineNumberStr = String(lineNumber)
 
@@ -29,17 +48,42 @@ class NoteManager {
             return
         }
 
-        const notes = this.getNotes()
-        if (!(lineNumberStr in notes)) {
-            notes[lineNumberStr] = []
-        }
-        notes[lineNumberStr].push({
-            id: uuidv4(),
+        const fileNotes = this.getNotes()
+        /* TODO: Limit to one note per line for now to keep it simple */
+        // if (!(lineNumberStr in notes)) {
+        //     notes[lineNumberStr] = []
+        // }
+        fileNotes[lineNumberStr] = []
+        fileNotes[lineNumberStr].push({
+            id: uuidv4(), // Given that its one note per line now, id is useless but just in case
             ...note
         })
-        this.context.workspaceState.update(file_path, notes)
+        this.context.workspaceState.update(file_path, fileNotes)
     }
 
+    /**
+     * Delete note at line
+     * @param lineNumber line number to delete notes at 
+     */
+    deleteNote(lineNumber: number): void {
+        const lineNumberStr = String(lineNumber)
+
+        // Get file path
+        const file_path = this.currentPath()
+        if (file_path == null) {
+            return
+        }
+
+        const fileNotes = this.getNotes()
+        delete fileNotes[lineNumberStr]
+        this.context.workspaceState.update(file_path, fileNotes)
+    }
+
+    // Retrieval
+    /**
+     * Gets all notes found in current active file in the editor
+     * @returns All notes in a file
+     */
     getNotes(): FileNotes {
         // Get file path
         const file_path = this.currentPath()
@@ -49,6 +93,19 @@ class NoteManager {
         return this.context.workspaceState.get(file_path) || {}
     }
 
+    /**
+     * Get all notes on a line. Expect just one note per line for now
+     * @param lineNumber line number the cursor is at
+     */
+    getNotesAtLine(lineNumber: number): Note[] {
+        const fileNotes = this.getNotes() 
+        return (fileNotes[String(lineNumber)] || [])
+    }
+
+    /**
+     * Prettify notes into string just for debugging
+     * @returns json string of notes
+     */
     getNotesPrettyString(): string {
         const notes = this.getNotes()
         return JSON.stringify(notes, null, 2);
@@ -60,6 +117,8 @@ class NoteManager {
     // Find out how to show notes on line or on hover
 
     // Delete note?
+    
+    // Add created at and updated at 
 }
 
 export default NoteManager

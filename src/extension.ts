@@ -1,8 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import NoteManager from './note_manager';
 import getNoteManager from './version';
+import { getLineData } from './helper';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -20,25 +20,18 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(vscode.commands.registerCommand('vsannotate.addAnnotation', async () => {
-		const editor = vscode.window.activeTextEditor
-		if (editor == null) { return }
+        const lineData = getLineData()
+		const noteText = await noteManager.getUserNoteInput(lineData)
 
-		const cursor = editor.selection.active
-		if (cursor == null) { return }
+		if (noteText.length > 0) {
+			noteManager.addNote(lineData.line.lineNumber, {
+				fileText: lineData.text,
+				note: noteText
+			})
+		} else {
+			noteManager.deleteNote(lineData.line.lineNumber)
+		}
 		
-		const line = editor.document.lineAt(cursor.line)
-		const text = line.text
-
-		// Get user note
-		const result = await vscode.window.showInputBox({
-			placeHolder: 'Add your notes',
-		})
-		const result_str = `${result}`
-
-		noteManager.addNote(line.lineNumber, {
-			file_text: text,
-			note: result_str
-		})
 		
 		vscode.window.showInformationMessage(`${noteManager.getNotesPrettyString()}`);
 	}));

@@ -1,5 +1,8 @@
+import * as vscode from 'vscode'
+
+// Note
 export interface NoteData {
-    file_text: string // Text found on the line
+    fileText: string // Text found on the line
     note: string // Note
 }
 
@@ -8,3 +11,11 @@ export interface Note extends NoteData{
 }
 
 export type FileNotes = Record<string, Note[]>
+
+// Editor state
+export interface LineData {
+    editor: vscode.TextEditor,
+    cursor: vscode.Position,
+    line: vscode.TextLine,
+    text: string
+}

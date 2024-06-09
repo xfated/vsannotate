@@ -2,11 +2,11 @@
 import * as vscode from 'vscode';
 import NoteManager from "./note_manager"
 
-const VERSION = 1.0
+export const VERSION = "1.0"
 const METADATA_KEY = "[METADATA_KEY]"
 
 interface Metadata {
-    version: number
+    version: string
 }
 
 const getNoteManager = (context: vscode.ExtensionContext): NoteManager => {
