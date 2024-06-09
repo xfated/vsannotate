@@ -1,5 +1,7 @@
+// Service class to execute actions on notes
+
 import * as vscode from 'vscode';
-import type { FileNotes, Note, NoteData } from './types';
+import type { FileNotes, NoteData } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 class NoteManager {
@@ -52,6 +54,12 @@ class NoteManager {
         return JSON.stringify(notes, null, 2);
     }
 
+    // Resolve line changes 
+    // https://stackoverflow.com/questions/63371178/how-to-get-line-number-of-the-newly-modified-lines-when-we-save-a-file-in-vs-cod
+
+    // Find out how to show notes on line or on hover
+
+    // Delete note?
 }
 
 export default NoteManager
