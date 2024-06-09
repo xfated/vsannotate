@@ -40,7 +40,7 @@ class NoteManager {
      * @param lineNumber line number the cursor is add
      * @param note note details
      */
-    addNote(lineNumber: number, note: NoteData): void {
+    addNote(lineNumber: number, noteData: NoteData): void {
         const lineNumberStr = String(lineNumber)
 
         // Get file path
@@ -54,11 +54,15 @@ class NoteManager {
         // if (!(lineNumberStr in notes)) {
         //     notes[lineNumberStr] = []
         // }
-        fileNotes[lineNumberStr] = []
-        fileNotes[lineNumberStr].push({
-            id: uuidv4(), // Given that its one note per line now, id is useless but just in case
-            ...note
-        })
+        const existingNotes = this.getNotesAtLine(lineNumber)
+        let existingNote = existingNotes.length > 0 ? existingNotes[0] : null
+        let newNote = {
+            id: existingNote?.id || uuidv4(),
+            createdAt: existingNote?.createdAt || Date.now(),
+            updatedAt: Date.now(),
+            ...noteData
+        }
+        fileNotes[lineNumberStr] = [newNote]
         this.updateFileNotes(fileNotes)
     }
 
@@ -131,8 +135,6 @@ class NoteManager {
     // Resolve line changes 
     // https://stackoverflow.com/questions/63371178/how-to-get-line-number-of-the-newly-modified-lines-when-we-save-a-file-in-vs-cod
 
-    // Find out how to show notes on line or on hover
-    
     // Add created at and updated at 
 }
 
