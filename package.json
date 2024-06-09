@@ -24,6 +24,13 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "vsannotate.addAnnotation",
+          "group": "z_commands",
+          "when": "false"
+        }
+      ],
       "editor/context": [
         {
           "command": "vsannotate.addAnnotation",
