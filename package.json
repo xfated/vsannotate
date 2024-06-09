@@ -20,7 +20,7 @@
       },
       {
         "command": "vsannotate.addAnnotation",
-        "title": "Add note"
+        "title": "Annotate"
       }
     ],
     "menus": {

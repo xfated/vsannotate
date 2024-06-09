@@ -1,8 +1,9 @@
 // Service class to execute actions on notes
 
 import * as vscode from 'vscode';
-import type { FileNotes, LineData, Note, NoteData } from './types';
+import type { FileNotes, LineData, Note, NoteData, VersionedFileNotes } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import { VERSION } from './version';
 
 class NoteManager {
     context: vscode.ExtensionContext
@@ -48,7 +49,7 @@ class NoteManager {
             return
         }
 
-        const fileNotes = this.getNotes()
+        const fileNotes = this.fetchFileNotes()
         /* TODO: Limit to one note per line for now to keep it simple */
         // if (!(lineNumberStr in notes)) {
         //     notes[lineNumberStr] = []
@@ -58,7 +59,7 @@ class NoteManager {
             id: uuidv4(), // Given that its one note per line now, id is useless but just in case
             ...note
         })
-        this.context.workspaceState.update(file_path, fileNotes)
+        this.updateFileNotes(fileNotes)
     }
 
     /**
@@ -74,23 +75,39 @@ class NoteManager {
             return
         }
 
-        const fileNotes = this.getNotes()
+        const fileNotes = this.fetchFileNotes()
         delete fileNotes[lineNumberStr]
-        this.context.workspaceState.update(file_path, fileNotes)
+        this.updateFileNotes(fileNotes)
     }
 
-    // Retrieval
+    // File Notes
     /**
-     * Gets all notes found in current active file in the editor
-     * @returns All notes in a file
+     * Stores file notes while taking into account version
+     * @param fileNotes all notes in a file
+     * @param version specific version if any
      */
-    getNotes(): FileNotes {
+    updateFileNotes(fileNotes: FileNotes, version?: string): void {
         // Get file path
         const file_path = this.currentPath()
         if (file_path == null) {
-            return {}
+            throw new Error("File path not found")
         }
-        return this.context.workspaceState.get(file_path) || {}
+        const versionedFileNotes: VersionedFileNotes = this.context.workspaceState.get(file_path) || {}
+        versionedFileNotes[version || VERSION] = fileNotes
+        this.context.workspaceState.update(file_path, versionedFileNotes)
+    }
+    /**
+     * Helper to gets all notes found in current active file in the editor
+     * Takes into account version
+     * @returns All notes in a file
+     */
+    fetchFileNotes(version?: string): FileNotes {
+        // Get file path
+        const file_path = this.currentPath()
+        if (file_path == null) {
+            throw new Error("File path not found")
+        }
+        return (this.context.workspaceState.get(file_path) as VersionedFileNotes)[version || VERSION] || {}
     }
 
     /**
@@ -98,7 +115,7 @@ class NoteManager {
      * @param lineNumber line number the cursor is at
      */
     getNotesAtLine(lineNumber: number): Note[] {
-        const fileNotes = this.getNotes() 
+        const fileNotes = this.fetchFileNotes() 
         return (fileNotes[String(lineNumber)] || [])
     }
 
@@ -107,7 +124,7 @@ class NoteManager {
      * @returns json string of notes
      */
     getNotesPrettyString(): string {
-        const notes = this.getNotes()
+        const notes = this.fetchFileNotes()
         return JSON.stringify(notes, null, 2);
     }
 
@@ -115,8 +132,6 @@ class NoteManager {
     // https://stackoverflow.com/questions/63371178/how-to-get-line-number-of-the-newly-modified-lines-when-we-save-a-file-in-vs-cod
 
     // Find out how to show notes on line or on hover
-
-    // Delete note?
     
     // Add created at and updated at 
 }

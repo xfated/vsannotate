@@ -10,7 +10,9 @@ export interface Note extends NoteData{
     id: string // uuid
 }
 
+type Version = string
 export type FileNotes = Record<string, Note[]>
+export type VersionedFileNotes = Record<Version, FileNotes>
 
 // Editor state
 export interface LineData {
