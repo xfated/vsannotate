@@ -131,6 +131,15 @@ class NoteManager {
     }
 
     /**
+     * Get all notes in a file.
+     * @param lineNumber line number the cursor is at
+     */
+    getAllNotes(): FileNotes {
+        const fileNotes = this.fetchFileNotes() 
+        return fileNotes
+    }
+
+    /**
      * Prettify notes into string just for debugging
      * @returns json string of notes
      */

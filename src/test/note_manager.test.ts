@@ -110,4 +110,33 @@ suite('NoteManager tests', () => {
         assert.strictEqual(updatedReturnedNote.createdAt, returnedNote.createdAt, 'createdAt should remain the same after update');
         assert.notStrictEqual(updatedReturnedNote.updatedAt, returnedNote.updatedAt, 'updatedAt should change after update');
     })
+
+    test('Able to fetch all notes', async ()=> {
+        // Add notes
+        const lineNumberOne = 1
+        const testDataOne: NoteData = {
+            fileText: 'test text one',
+            note: 'test note one'
+        }
+        noteManager.addNote(lineNumberOne, testDataOne)
+
+        const lineNumberTwo = 2
+        const testDataTwo: NoteData = {
+            fileText: 'test text two',
+            note: 'test note two'
+        }
+        noteManager.addNote(lineNumberTwo, testDataTwo)
+
+        // Retrieve notes
+        const allNotes = noteManager.getAllNotes()
+        assert.strictEqual(2, Object.keys(allNotes).length)
+
+        const noteOne = allNotes[lineNumberOne][0]
+        assert.strictEqual(testDataOne.fileText, noteOne.fileText)
+        assert.strictEqual(testDataOne.note, noteOne.note)
+        
+        const noteTwo = allNotes[lineNumberTwo][0]
+        assert.strictEqual(testDataTwo.fileText, noteTwo.fileText)
+        assert.strictEqual(testDataTwo.note, noteTwo.note)
+    })
 })
