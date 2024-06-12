@@ -84,6 +84,13 @@ class NoteManager {
         this.updateFileNotes(fileNotes)
     }
 
+    /**
+     * Delete all notes to help with test cleanup
+     */
+    deleteAllNotes(): void {
+        this.updateFileNotes({})
+    }
+
     // File Notes
     /**
      * Stores file notes while taking into account version
