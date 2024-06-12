@@ -3,21 +3,22 @@
 import * as vscode from 'vscode';
 import getNoteManager from './version';
 import { getLineData } from './helper';
+import NotesViewer from './notes_viewer';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
 	const noteManager = getNoteManager(context)
-
+	const notesViewer = new NotesViewer(noteManager)
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the commad field in package.json
-	const disposable = vscode.commands.registerCommand('vsannotate.showAnnotations', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('vsannotate.showAnnotations', () => {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
 		vscode.window.showInformationMessage('Hello VS Code! test');
-	});
+	}))
 
 	context.subscriptions.push(vscode.commands.registerCommand('vsannotate.addAnnotation', async () => {
         const lineData = getLineData()
@@ -31,13 +32,24 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			noteManager.deleteNote(lineData.line.lineNumber)
 		}
+		// Update UI
+		notesViewer.addLinesUI(vscode.window.activeTextEditor?.document);
 		
 		
 		vscode.window.showInformationMessage(`${noteManager.getNotesPrettyString()}`);
 	}));
 
-	context.subscriptions.push(disposable);
-	
+	// Register event listener for when a text document is opened
+    vscode.window.onDidChangeActiveTextEditor((editor?: vscode.TextEditor) => {
+        notesViewer.addLinesUI(editor?.document);
+    })
+
+    // Also handle already open documents when the extension activates
+    vscode.window.visibleTextEditors.forEach(editor => {
+        notesViewer.addLinesUI(editor?.document);
+    });
+
+
 	return context
 }
 

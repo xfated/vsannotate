@@ -1,15 +1,15 @@
 // Service class to execute actions on notes
 
-import * as vscode from 'vscode';
-import type { FileNotes, LineData, Note, NoteData, VersionedFileNotes } from './types';
-import { v4 as uuidv4 } from 'uuid';
-import { VERSION } from './version';
+import * as vscode from 'vscode'
+import type { FileNotes, LineData, Note, NoteData, VersionedFileNotes } from './types'
+import { v4 as uuidv4 } from 'uuid'
 
+export const VERSION = "1.0"
 class NoteManager {
     context: vscode.ExtensionContext
 
     constructor(context: vscode.ExtensionContext) {
-        this.context = context;
+        this.context = context
     }
 
     currentPath(): string | null {
@@ -118,7 +118,9 @@ class NoteManager {
         if (file_path == null) {
             throw new Error("File path not found")
         }
-        return (this.context.workspaceState.get(file_path) as VersionedFileNotes)[version || VERSION] || {}
+        const versionedFileNotes = (this.context.workspaceState.get(file_path) as VersionedFileNotes)
+        if (versionedFileNotes == null) { return {} }
+        return versionedFileNotes[version || VERSION]
     }
 
     /**
@@ -151,7 +153,6 @@ class NoteManager {
     // Resolve line changes 
     // https://stackoverflow.com/questions/63371178/how-to-get-line-number-of-the-newly-modified-lines-when-we-save-a-file-in-vs-cod
 
-    // Add created at and updated at 
 }
 
 export default NoteManager
