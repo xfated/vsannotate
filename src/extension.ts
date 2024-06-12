@@ -49,7 +49,19 @@ export function activate(context: vscode.ExtensionContext) {
         notesViewer.addLinesUI(editor?.document);
     });
 
-
+	// Register a hover provider
+    context.subscriptions.push(vscode.languages.registerHoverProvider({ scheme: 'file' }, {
+        provideHover(document, position, token) {
+            const documentNotes = notesViewer.notesMap.get(document.fileName);
+            if (documentNotes) {
+                const note = documentNotes.get(position.line);
+                if (note) {
+                    return new vscode.Hover(`Note: ${note.note}`);
+                }
+            }
+            return null;
+        }
+    }));
 	return context
 }
 

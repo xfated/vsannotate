@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode'
 import NoteManager from './note_manager'
-import { FileNotes } from './types'
+import { FileNotes, Note } from './types'
 
 class NotesViewer {
     noteManager: NoteManager
@@ -10,12 +10,19 @@ class NotesViewer {
 
     // Store a record of decorations so we can clear them
     fileHighlights: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>
-
+    notesMap: Map<string, Map<number, Note>> = new Map<string, Map<number, Note>>();
+    
     constructor(noteManager: NoteManager) {
         this.noteManager = noteManager
     }
 
-    // Function to highlight notes in a document
+    /**
+     * Highlights notes in a given document.
+     * This method fetches notes for the current file and finds the associated editor.
+     * It then calls `annotateLines` to apply highlights to the lines with notes.
+     *
+     * @param document - The text document to highlight.
+     */
 	addLinesUI(document?: vscode.TextDocument) {
 		if (document == null) { return }
 
@@ -26,13 +33,19 @@ class NotesViewer {
 			return
 		}
 
-        this.highlightNotes(editor, document, fileNotes)
+        this.annotateLines(editor, document, fileNotes)
 	}
 
-    /** Highlight Helpers */
-
-    
-    highlightNotes(editor: vscode.TextEditor, document: vscode.TextDocument, 
+    /**
+     * Annotates lines with notes in a given document.
+     * This method clears previous decorations if they exist and creates new decorations for lines with notes.
+     * It also stores the notes in `notesMap` for hover functionality.
+     *
+     * @param editor - The text editor associated with the document.
+     * @param document - The text document to annotate.
+     * @param fileNotes - The notes to highlight in the document.
+     */
+    annotateLines(editor: vscode.TextEditor, document: vscode.TextDocument, 
             fileNotes: FileNotes) {
         vscode.window.showInformationMessage('Highlighting');
 
@@ -44,17 +57,29 @@ class NotesViewer {
         }
 
 		const decorations: vscode.DecorationOptions[] = []
+        const documentNotes = new Map<number, Note>();
 
 		Object.keys(fileNotes).forEach(lineNumber => {
+            // Add highlight
 			const lineIndex = parseInt(lineNumber, 10)
 			const line = document.lineAt(lineIndex)
 			const range = new vscode.Range(lineIndex, 0, lineIndex, line.text.length)
 			decorations.push({ range })
+
+            // Store note for hover
+            documentNotes.set(lineIndex, fileNotes[lineNumber][0]);
 		});
-        // Reset first
+
         editor.setDecorations(fileHighlights, decorations);
+        this.notesMap.set(document.fileName, documentNotes);
     }
 
+    /**
+     * Creates a decoration type for highlighting lines.
+     * This method returns a TextEditorDecorationType with the specified background color for highlighting.
+     *
+     * @returns A TextEditorDecorationType for highlighting lines.
+     */
     getHighlightDecorationType(): vscode.TextEditorDecorationType{
         return vscode.window.createTextEditorDecorationType({
 			backgroundColor: this.HIGHLIGHT_COLOR // Highlight with a yellow background
