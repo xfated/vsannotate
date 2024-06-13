@@ -22,7 +22,7 @@ class NoteManager {
     }
 
     // User helpers
-    async getUserNoteInput(lineData: LineData): Promise<string> {
+    async getUserNoteInput(lineData: LineData): Promise<string | null> {
         const notesAtLine = this.getNotesAtLine(lineData.line.lineNumber)
         const defaultValue = notesAtLine.length == 0 ? '' : notesAtLine[0].note
          
@@ -31,6 +31,7 @@ class NoteManager {
             value: defaultValue,
 			placeHolder: 'Add your note',
 		})
+        if (result == null) { return null }
 		return`${result}`.trim()
     }
      

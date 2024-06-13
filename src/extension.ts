@@ -15,7 +15,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('vsannotate.addAnnotation', async () => {
         const lineData = getLineData()
 		const noteText = await noteManager.getUserNoteInput(lineData)
-
+		if (noteText == null) { return }
+		
+		vscode.window.showInformationMessage(`${noteText}`);
+		
 		if (noteText.length > 0) {
 			noteManager.addNote(lineData.line.lineNumber, {
 				fileText: lineData.text,

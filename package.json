@@ -38,7 +38,15 @@
           "when": "editorTextFocus"
         }
       ]
-    }
+    },
+    "keybindings": [
+        {
+          "command": "vsannotate.addAnnotation",
+          "key": "ctrl+alt+a",
+          "mac": "cmd+shift+a",
+          "when": "editorTextFocus"
+        }
+      ]
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",
