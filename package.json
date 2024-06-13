@@ -15,16 +15,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "vsannotate.showAnnotations",
-        "title": "Show Annotations"
-      },
-      {
         "command": "vsannotate.addAnnotation",
         "title": "Annotate"
       },
       {
-        "command": "vsannotate.generateNotesReadmePreview",
-        "title": "Show All Notes"
+        "command": "vsannotate.generateReadme",
+        "title": "VsAnnotate: Show All Notes"
       }
     ],
     "menus": {

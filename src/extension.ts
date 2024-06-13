@@ -11,14 +11,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const noteManager = getNoteManager(context)
 	const notesViewer = new NotesViewer(noteManager)
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the commad field in package.json
-	context.subscriptions.push(vscode.commands.registerCommand('vsannotate.showAnnotations', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello VS Code! test');
-	}))
 
 	context.subscriptions.push(vscode.commands.registerCommand('vsannotate.addAnnotation', async () => {
         const lineData = getLineData()
@@ -62,9 +54,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
-	// Register the command to generate the README.md file
-    context.subscriptions.push(vscode.commands.registerCommand('vsannotate.generateNotesReadmePreview', async () => {
-        await notesViewer.generateNotesReadme(context);
+	// Register the command to generate the README.md file 
+    context.subscriptions.push(vscode.commands.registerCommand('vsannotate.generateReadme', async () => {
+        await notesViewer.generateNotesReadme(context, false);
     }));
 
 	return context

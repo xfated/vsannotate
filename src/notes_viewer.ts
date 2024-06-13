@@ -133,24 +133,30 @@ class NotesViewer {
 
     /**
      * Consolidates the notes and displays them in a README.md file.
-     * The notes are grouped by filename in alphabetical order, with each group sorted by updatedAt in descending order.
-     * Each note is prepended by the line number, and clicking it will open the file at the specified line.
      * Opens a preview to the README.md file in a new tab.
      *
      * @param context - The extension context to access the workspace state.
+     * @param isPreview - A boolean indicating whether to open the file in preview mode.
      */
-    async generateNotesReadme(context: vscode.ExtensionContext) {
+    async generateNotesReadme(context: vscode.ExtensionContext, isPreview = true) {
         const readmeContent = this.generateReadmeContent(context)
-        const readmeUri = this.getReadmePath()
+        const readmeUri = vscode.Uri.parse(`untitled:README_${uuidv4()}.md`);
         if (readmeUri == null) { return }
+
         try {
-            // Create or overwrite the .md file
-            await vscode.workspace.fs.writeFile(readmeUri, Buffer.from(readmeContent.join('\n')));
+            // Open the virtual document
             const document = await vscode.workspace.openTextDocument(readmeUri);
-            await vscode.commands.executeCommand('markdown.showPreview', readmeUri);
+            const editor = await vscode.window.showTextDocument(document);
+            await editor.edit(editBuilder => {
+                editBuilder.insert(new vscode.Position(0, 0), readmeContent.join('\n'));
+            });
+            
+            if (isPreview) {
+                await vscode.commands.executeCommand('markdown.showPreview', readmeUri);
+            }
         } catch (err) {
-            const error = err as Error
-            vscode.window.showErrorMessage(`Failed to create readme Preview: ${error.message}`);
+            const error = err as Error;
+            vscode.window.showErrorMessage(`Failed to create README: ${error.message}`);
         }
     }
 
@@ -205,25 +211,6 @@ class NotesViewer {
             markdownLines.push('');
         }
         return markdownLines
-    }
-
-    getReadmePath(): vscode.Uri | null {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        const readmeFileName = `README_${uuidv4()}.md`
-        let readmeUri: vscode.Uri;
-
-        if (workspaceFolders && workspaceFolders.length > 0) {
-            readmeUri = vscode.Uri.file(path.join(workspaceFolders[0].uri.fsPath, readmeFileName));
-        } else {
-            const activeDocument = vscode.window.activeTextEditor?.document;
-            if (!activeDocument) {
-                vscode.window.showErrorMessage('No active document found.');
-                return null;
-            }
-            const documentPath = path.dirname(activeDocument.uri.fsPath);
-            readmeUri = vscode.Uri.file(path.join(documentPath, readmeFileName));
-        }
-        return readmeUri
     }
 }
 
