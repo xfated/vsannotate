@@ -2,7 +2,7 @@
 import * as vscode from 'vscode';
 import NoteManager, { VERSION } from "./note_manager"
 
-const METADATA_KEY = "[METADATA_KEY]"
+export const METADATA_KEY = "[METADATA_KEY]"
 
 interface Metadata {
     version: string

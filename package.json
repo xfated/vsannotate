@@ -23,7 +23,7 @@
         "title": "Annotate"
       },
       {
-        "command": "vsannotate.generateNotesReadme",
+        "command": "vsannotate.generateNotesReadmePreview",
         "title": "Show All Notes"
       }
     ],

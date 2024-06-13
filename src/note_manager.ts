@@ -111,17 +111,19 @@ class NoteManager {
     /**
      * Helper to gets all notes found in current active file in the editor
      * Takes into account version
+     * @param version specified version of notes, in case of schema changes
+     * @param inputFilePath use current activeTextEditor path if not specified
      * @returns All notes in a file
      */
-    fetchFileNotes(version?: string): FileNotes {
+    fetchFileNotes(params?: { version?: string, inputFilePath?: string }): FileNotes {
         // Get file path
-        const file_path = this.currentPath()
-        if (file_path == null) {
+        const filePath = params?.inputFilePath || this.currentPath()
+        if (filePath == null) {
             throw new Error("File path not found")
         }
-        const versionedFileNotes = (this.context.workspaceState.get(file_path) as VersionedFileNotes)
+        const versionedFileNotes = (this.context.workspaceState.get(filePath) as VersionedFileNotes)
         if (versionedFileNotes == null) { return {} }
-        return versionedFileNotes[version || VERSION]
+        return versionedFileNotes[params?.version || VERSION]
     }
 
     /**
@@ -129,16 +131,16 @@ class NoteManager {
      * @param lineNumber line number the cursor is at
      */
     getNotesAtLine(lineNumber: number): Note[] {
-        const fileNotes = this.fetchFileNotes() 
+        const fileNotes = this.fetchFileNotes({}) 
         return (fileNotes[String(lineNumber)] || [])
     }
 
     /**
      * Get all notes in a file.
-     * @param lineNumber line number the cursor is at
+     * @param inputFilePath use current activeTextEditor path if not specified
      */
-    getAllNotes(): FileNotes {
-        const fileNotes = this.fetchFileNotes() 
+    getAllNotes(inputFilePath?: string): FileNotes {
+        const fileNotes = this.fetchFileNotes({ inputFilePath }) 
         return fileNotes
     }
 

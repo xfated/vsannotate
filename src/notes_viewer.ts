@@ -2,7 +2,13 @@
 
 import * as vscode from 'vscode'
 import NoteManager from './note_manager'
+import * as path from 'path';
 import { FileNotes, Note } from './types'
+import { METADATA_KEY } from './version'
+import { v4 as uuidv4 } from 'uuid'
+
+// List of keys that are not used for storing notes
+const NON_NOTE_KEYS = new Set([METADATA_KEY])
 
 class NotesViewer {
     noteManager: NoteManager
@@ -123,6 +129,101 @@ class NotesViewer {
                 margin: '0 0 0 1em',
             }
         })
+    }
+
+    /**
+     * Consolidates the notes and displays them in a README.md file.
+     * The notes are grouped by filename in alphabetical order, with each group sorted by updatedAt in descending order.
+     * Each note is prepended by the line number, and clicking it will open the file at the specified line.
+     * Opens a preview to the README.md file in a new tab.
+     *
+     * @param context - The extension context to access the workspace state.
+     */
+    async generateNotesReadme(context: vscode.ExtensionContext) {
+        const readmeContent = this.generateReadmeContent(context)
+        const readmeUri = this.getReadmePath()
+        if (readmeUri == null) { return }
+        try {
+            // Create or overwrite the .md file
+            await vscode.workspace.fs.writeFile(readmeUri, Buffer.from(readmeContent.join('\n')));
+            const document = await vscode.workspace.openTextDocument(readmeUri);
+            await vscode.commands.executeCommand('markdown.showPreview', readmeUri);
+        } catch (err) {
+            const error = err as Error
+            vscode.window.showErrorMessage(`Failed to create readme Preview: ${error.message}`);
+        }
+    }
+
+    /**
+     * Generates Markdown content for notes and displays them in a README.md file.
+     * The notes are grouped by filename in alphabetical order, with each group sorted by updatedAt in descending order.
+     * 
+     * @param context - The extension context to access the workspace state.
+     */
+    generateReadmeContent(context: vscode.ExtensionContext): string[] {
+        // Iterate over all files and collect notes using NoteManager
+        const allNotes: { [fileName: string]: Note[] } = {};
+
+        for (const filePath of context.workspaceState.keys()) {
+            if (NON_NOTE_KEYS.has(filePath)) { continue }
+
+            const fileNotes: FileNotes = this.noteManager.getAllNotes(filePath)
+            const fileNotesList: Note[] = [];
+
+            Object.values(fileNotes).forEach(notes => {
+                fileNotesList.push(...notes);
+            })
+
+            if (fileNotesList.length > 0) {
+                allNotes[filePath] = fileNotesList;
+            }
+        }
+        
+        // Sort file names in alphabetical order
+        const sortedFileNames = Object.keys(allNotes).sort();
+
+        // Generate Markdown content
+        const markdownLines: string[] = [];
+        markdownLines.push('# Notes');
+        markdownLines.push('');
+
+        for (const filePath of sortedFileNames) {
+            const notes = allNotes[filePath];
+
+            // Sort notes by updatedAt in descending order
+            notes.sort((a, b) => b.updatedAt - a.updatedAt);
+
+            // Add file title with link to open the file
+            markdownLines.push(`## [${filePath}](vscode://file/${filePath})`);
+
+            // Add notes for the file
+            notes.forEach(note => {
+                const noteContent = note.note.replace(/\n/g, ' ');
+                const lineNumber = note.lineNumber + 1;
+                markdownLines.push(`- [Line ${lineNumber}](vscode://file/${filePath}:${lineNumber}): ${noteContent}`);
+            });
+            markdownLines.push('');
+        }
+        return markdownLines
+    }
+
+    getReadmePath(): vscode.Uri | null {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        const readmeFileName = `README_${uuidv4()}.md`
+        let readmeUri: vscode.Uri;
+
+        if (workspaceFolders && workspaceFolders.length > 0) {
+            readmeUri = vscode.Uri.file(path.join(workspaceFolders[0].uri.fsPath, readmeFileName));
+        } else {
+            const activeDocument = vscode.window.activeTextEditor?.document;
+            if (!activeDocument) {
+                vscode.window.showErrorMessage('No active document found.');
+                return null;
+            }
+            const documentPath = path.dirname(activeDocument.uri.fsPath);
+            readmeUri = vscode.Uri.file(path.join(documentPath, readmeFileName));
+        }
+        return readmeUri
     }
 }
 

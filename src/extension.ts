@@ -62,6 +62,11 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
+	// Register the command to generate the README.md file
+    context.subscriptions.push(vscode.commands.registerCommand('vsannotate.generateNotesReadmePreview', async () => {
+        await notesViewer.generateNotesReadme(context);
+    }));
+
 	return context
 }
 
