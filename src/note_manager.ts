@@ -59,6 +59,7 @@ class NoteManager {
         let newNote = {
             id: existingNote?.id || uuidv4(),
             createdAt: existingNote?.createdAt || Date.now(),
+            lineNumber: existingNote?.lineNumber || lineNumber,
             updatedAt: Date.now(),
             ...noteData
         }

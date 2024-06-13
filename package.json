@@ -21,6 +21,10 @@
       {
         "command": "vsannotate.addAnnotation",
         "title": "Annotate"
+      },
+      {
+        "command": "vsannotate.generateNotesReadme",
+        "title": "Show All Notes"
       }
     ],
     "menus": {

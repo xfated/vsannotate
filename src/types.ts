@@ -8,6 +8,7 @@ export interface NoteData {
 
 export interface Note extends NoteData{
     id: string // uuid
+    lineNumber: number,
     createdAt: number // created at time in ms
     updatedAt: number // created at time in ms
 }

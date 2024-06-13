@@ -35,7 +35,6 @@ export function activate(context: vscode.ExtensionContext) {
 		// Update UI
 		notesViewer.addLinesUI(vscode.window.activeTextEditor?.document);
 		
-		
 		vscode.window.showInformationMessage(`${noteManager.getNotesPrettyString()}`);
 	}));
 
@@ -62,6 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
             return null;
         }
     }));
+
 	return context
 }
 

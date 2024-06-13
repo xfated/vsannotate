@@ -6,11 +6,13 @@ import { FileNotes, Note } from './types'
 
 class NotesViewer {
     noteManager: NoteManager
-    HIGHLIGHT_COLOR: string = 'rgba(255,255,0,0.3)'
+    HIGHLIGHT_COLOR: string = 'rgba(255,255,0,0.2)'
+    NOTE_COLOR: string = 'rgba(150,150,255,1)'
 
-    // Store a record of decorations so we can clear them
+    // Store a record of decorations so we can reuse existing ones
     fileHighlights: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>
-    notesMap: Map<string, Map<number, Note>> = new Map<string, Map<number, Note>>();
+    fileTextDecorations: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>();
+    notesMap: Map<string, Map<number, Note>> = new Map<string, Map<number, Note>>()
     
     constructor(noteManager: NoteManager) {
         this.noteManager = noteManager
@@ -47,17 +49,24 @@ class NotesViewer {
      */
     annotateLines(editor: vscode.TextEditor, document: vscode.TextDocument, 
             fileNotes: FileNotes) {
-        vscode.window.showInformationMessage('Highlighting');
+        vscode.window.showInformationMessage('Highlighting')
 
-        // Clear previous decoration type if exists
-        let fileHighlights = this.fileHighlights.get(document.fileName);
+        // Fetch if exists else create new
+        let fileHighlights = this.fileHighlights.get(document.fileName)
         if (!fileHighlights) {
             fileHighlights = this.getHighlightDecorationType()
-            this.fileHighlights.set(document.fileName, fileHighlights);
+            this.fileHighlights.set(document.fileName, fileHighlights)
         }
+         // // Fetch if exists else create new
+         let fileTextDecoration = this.fileTextDecorations.get(document.fileName);
+         if (!fileTextDecoration) {
+            fileTextDecoration = this.getNoteDecorationType();
+             this.fileTextDecorations.set(document.fileName, fileTextDecoration);
+         }
 
 		const decorations: vscode.DecorationOptions[] = []
-        const documentNotes = new Map<number, Note>();
+        const noteDecorations: vscode.DecorationOptions[] = []
+        const documentNotes = new Map<number, Note>()
 
 		Object.keys(fileNotes).forEach(lineNumber => {
             // Add highlight
@@ -66,12 +75,27 @@ class NotesViewer {
 			const range = new vscode.Range(lineIndex, 0, lineIndex, line.text.length)
 			decorations.push({ range })
 
-            // Store note for hover
-            documentNotes.set(lineIndex, fileNotes[lineNumber][0]);
-		});
+             // Add note text at the end of the line
+             const noteText = fileNotes[lineNumber][0].note
+             noteDecorations.push({
+                 range,
+                 renderOptions: {
+                     after: {
+                         contentText: ` // ${noteText}`,
+                      }
+                 }
+             })
 
-        editor.setDecorations(fileHighlights, decorations);
-        this.notesMap.set(document.fileName, documentNotes);
+             // Store note for hover
+            documentNotes.set(lineIndex, fileNotes[lineNumber][0])
+		})
+
+        // Set highights
+        editor.setDecorations(fileHighlights, decorations)
+        // Set text decoration (text at end of line)
+        editor.setDecorations(fileTextDecoration, noteDecorations);
+        // Add notes for hover
+        this.notesMap.set(document.fileName, documentNotes)
     }
 
     /**
@@ -84,6 +108,21 @@ class NotesViewer {
         return vscode.window.createTextEditorDecorationType({
 			backgroundColor: this.HIGHLIGHT_COLOR // Highlight with a yellow background
 		})
+    }
+
+    /**
+     * Creates a decoration type for displaying notes at the end of lines.
+     * This method returns a TextEditorDecorationType with the specified color for note text.
+     *
+     * @returns A TextEditorDecorationType for displaying note text.
+     */
+    getNoteDecorationType(): vscode.TextEditorDecorationType {
+        return vscode.window.createTextEditorDecorationType({
+            after: {
+                color: this.NOTE_COLOR,
+                margin: '0 0 0 1em',
+            }
+        })
     }
 }
 
