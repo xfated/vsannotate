@@ -10,7 +10,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["*"],
+  "activationEvents": [
+    "*"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -40,13 +42,13 @@
       ]
     },
     "keybindings": [
-        {
-          "command": "vsannotate.addAnnotation",
-          "key": "ctrl+alt+a",
-          "mac": "cmd+shift+a",
-          "when": "editorTextFocus"
-        }
-      ]
+      {
+        "command": "vsannotate.addAnnotation",
+        "key": "ctrl+alt+a",
+        "mac": "cmd+shift+a",
+        "when": "editorTextFocus"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",
@@ -63,6 +65,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin-js": "^2.1.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
     "@types/sinon": "^17.0.3",

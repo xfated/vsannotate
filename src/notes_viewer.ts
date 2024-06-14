@@ -1,27 +1,26 @@
 // Service class to show notes on documents
 
-import * as vscode from 'vscode'
-import NoteManager from './note_manager'
-import * as path from 'path';
-import { FileNotes, Note } from './types'
-import { METADATA_KEY } from './version'
-import { v4 as uuidv4 } from 'uuid'
+import * as vscode from 'vscode';
+import NoteManager from './note_manager';
+import { FileNotes, Note } from './types';
+import { METADATA_KEY } from './version';
+import { v4 as uuidv4 } from 'uuid';
 
 // List of keys that are not used for storing notes
-const NON_NOTE_KEYS = new Set([METADATA_KEY])
+const NON_NOTE_KEYS = new Set([METADATA_KEY]);
 
 class NotesViewer {
-    noteManager: NoteManager
-    HIGHLIGHT_COLOR: string = 'rgba(255,255,0,0.2)'
-    NOTE_COLOR: string = 'rgba(150,150,255,1)'
+    noteManager: NoteManager;
+    HIGHLIGHT_COLOR: string = 'rgba(255,255,0,0.2)';
+    NOTE_COLOR: string = 'rgba(150,150,255,1)';
 
     // Store a record of decorations so we can reuse existing ones
-    fileHighlights: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>
-    fileTextDecorations: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>();
-    notesMap: Map<string, Map<number, Note>> = new Map<string, Map<number, Note>>()
+    fileHighlights: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>;
+    fileTextDecorations: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>();;
+    notesMap: Map<string, Map<number, Note>> = new Map<string, Map<number, Note>>();
     
     constructor(noteManager: NoteManager) {
-        this.noteManager = noteManager
+        this.noteManager = noteManager;
     }
 
     /**
@@ -32,16 +31,16 @@ class NotesViewer {
      * @param document - The text document to highlight.
      */
 	addLinesUI(document?: vscode.TextDocument) {
-		if (document == null) { return }
+		if (document == null) { return; };
 
-		const fileNotes = this.noteManager.fetchFileNotes()
-		const editor = vscode.window.visibleTextEditors.find(e => e.document === document)
+		const fileNotes = this.noteManager.fetchFileNotes();
+		const editor = vscode.window.visibleTextEditors.find(e => e.document === document);
 
 		if (!editor) {
-			return
+			return;
 		}
 
-        this.annotateLines(editor, document, fileNotes)
+        this.annotateLines(editor, document, fileNotes);
 	}
 
     /**
@@ -55,8 +54,6 @@ class NotesViewer {
      */
     annotateLines(editor: vscode.TextEditor, document: vscode.TextDocument, 
             fileNotes: FileNotes) {
-        vscode.window.showInformationMessage('Highlighting')
-
         // Fetch if exists else create new
         let fileHighlights = this.fileHighlights.get(document.fileName)
         if (!fileHighlights) {

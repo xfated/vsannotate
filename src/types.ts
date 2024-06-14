@@ -14,7 +14,7 @@ export interface Note extends NoteData{
 }
 
 type Version = string
-export type FileNotes = Record<string, Note[]>
+export type FileNotes = Record<string, Note[]> // Use string key because it seems more versatile
 export type VersionedFileNotes = Record<Version, FileNotes>
 
 // Editor state

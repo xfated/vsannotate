@@ -33,6 +33,16 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage(`${noteManager.getNotesPrettyString()}`);
 	}));
 
+    // Event listener for text document changes
+    context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
+        const hasAdjustments = noteManager.handleDocumentChange(event);
+        
+        // Reapply decorations
+        if (hasAdjustments) {
+            notesViewer.addLinesUI(event.document);
+        }
+    }));
+
 	// Register event listener for when a text document is opened
     vscode.window.onDidChangeActiveTextEditor((editor?: vscode.TextEditor) => {
         notesViewer.addLinesUI(editor?.document);
