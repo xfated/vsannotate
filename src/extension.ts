@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import getNoteManager from './version';
 import { getLineData } from './helper';
 import NotesViewer from './notes_viewer';
+import { GitHelper } from './git_helper';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -11,6 +12,17 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const noteManager = getNoteManager(context)
 	const notesViewer = new NotesViewer(noteManager)
+    const gitHelper = new GitHelper()
+
+    // const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
+    // const git = gitExtension?.getAPI(1);
+    
+    // if (git) {
+    //     context.subscriptions.push(git.onDidChangeState(() => {
+    //         noteManager.handleGitChange(git);
+    //     }));
+    // }
+
 
 	context.subscriptions.push(vscode.commands.registerCommand('vsannotate.addAnnotation', async () => {
         const lineData = getLineData()
