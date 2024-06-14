@@ -167,6 +167,7 @@ class NoteManager {
         const fileNotes = this.getAllNotes(filePath);
         const updatedNotes: FileNotes = {};
 
+        let hasChange = false
         // Adjust note line numbers based on the changes
         event.contentChanges.forEach(change => {
             const startLine = change.range.start.line;
@@ -176,14 +177,23 @@ class NoteManager {
             Object.values(fileNotes).forEach((notes: Note[]) => {
                 const originalLineNumber = notes[0].lineNumber
                 notes.forEach(note => {
-                    if (note.lineNumber > endLine) {
+                    let newLineNumber = note.lineNumber
+                    if (newLineNumber > endLine) {
                         // Move down if change before note
-                        note.lineNumber += lineDelta;
-                    } else if (note.lineNumber >= startLine && note.lineNumber <= endLine) {
+                        hasChange = true
+                        newLineNumber += lineDelta;
+                    } else if (newLineNumber >= startLine && newLineNumber <= endLine) {
                         // Only reaches here if there was a multi line paste on the target line
-                        note.lineNumber = startLine;
+                        hasChange = true
+                        newLineNumber = startLine;
                     }
-                    // Do nothing if change is after
+                    
+                    // Fetch the new file text at the updated line number
+                    const newFileText = document.lineAt(newLineNumber).text;
+
+                    // Update note
+                    note.fileText = newFileText
+                    note.lineNumber = newLineNumber
                 });
                 // Add to new line
                 updatedNotes[String(notes[0].lineNumber)] = fileNotes[String(originalLineNumber)]
@@ -191,11 +201,11 @@ class NoteManager {
         });
 
         // Save the updated notes
-        vscode.window.showInformationMessage(`TEST ${JSON.stringify(updatedNotes)}`);
-        this.updateFileNotes(updatedNotes);
+        if (hasChange) {
+            this.updateFileNotes(updatedNotes);
+        }
 
-        // TODO: return whether or not there are any changes to notes
-        return true
+        return hasChange
     }
 
     // Resolve line changes 
