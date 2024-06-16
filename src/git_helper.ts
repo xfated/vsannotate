@@ -86,6 +86,14 @@ export class GitHelper {
     }
 
     function parseDiff(diff: string): DiffResult {
+        /** TODO:
+         * if there is commit change:
+         * For all files, and all lines, get diff from note commit and HEAD
+         * cache git diff: cur commit -> prev commit -> file -> diffs
+         * for each line in file, check diffs to try to resolve
+         */
+        
+
         const addedLines: { line: string, lineNumber: number }[] = [];
         const removedLines: { line: string, lineNumber: number }[] = [];
         const diffLines = diff.split('\n');
