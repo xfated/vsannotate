@@ -14,16 +14,6 @@ export function activate(context: vscode.ExtensionContext) {
 	const notesViewer = new NotesViewer(noteManager)
     const gitHelper = new GitHelper()
 
-    // const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
-    // const git = gitExtension?.getAPI(1);
-    
-    // if (git) {
-    //     context.subscriptions.push(git.onDidChangeState(() => {
-    //         noteManager.handleGitChange(git);
-    //     }));
-    // }
-
-
 	context.subscriptions.push(vscode.commands.registerCommand('vsannotate.addAnnotation', async () => {
         const lineData = getLineData()
 		const noteText = await noteManager.getUserNoteInput(lineData)
@@ -47,6 +37,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Event listener for text document changes
     context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
+        gitHelper.getDiffWithHead()
+
         const hasAdjustments = noteManager.handleDocumentChange(event);
         
         // Reapply decorations

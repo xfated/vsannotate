@@ -123,7 +123,7 @@ class NoteManager {
             throw new Error("File path not found");
         }
         const versionedFileNotes = (this.context.workspaceState.get(filePath) as VersionedFileNotes);
-        if (versionedFileNotes === null) { return {} };
+        if (versionedFileNotes == null) { return {} };
         return versionedFileNotes[params?.version || VERSION];
     }
 
@@ -174,6 +174,8 @@ class NoteManager {
             const endLine = change.range.end.line;
             const lineDelta = change.text.split('\n').length - (endLine - startLine + 1);
 
+            // console.log(change.text)
+            // console.log(`${startLine}, ${endLine}, ${lineDelta}`)
             Object.values(fileNotes).forEach((notes: Note[]) => {
                 const originalLineNumber = notes[0].lineNumber
                 notes.forEach(note => {
@@ -183,6 +185,8 @@ class NoteManager {
                         hasChange = true
                         newLineNumber += lineDelta;
                     } else if (newLineNumber >= startLine && newLineNumber <= endLine) {
+                        // For git related multi line changes, the change includes all text from first to last line
+                        // So we only search within the changed lines
                         // Only reaches here if there was a multi line paste on the target line
                         hasChange = true
                         newLineNumber = startLine;
@@ -202,15 +206,94 @@ class NoteManager {
 
         // Save the updated notes
         if (hasChange) {
+            vscode.window.showInformationMessage(`Changed ${JSON.stringify(updatedNotes)}`);
             this.updateFileNotes(updatedNotes);
         }
 
         return hasChange
     }
 
-    // Resolve line changes 
-    // https://stackoverflow.com/questions/63371178/how-to-get-line-number-of-the-newly-modified-lines-when-we-save-a-file-in-vs-cod
+    // /**
+    //  * Handles git state changes and updates note line numbers.
+    //  * 
+    //  * @param git - The Git API instance.
+    //  */
+    // async handleGitChange(git: any) {
+    //     console.log('git change')
+    //     for (const repository of git.repositories) {
+    //         for (const change of repository.state.workingTreeChanges) {
+    //             const uri = change.uri;
+    //             const document = await vscode.workspace.openTextDocument(uri);
 
+            
+    //             // Fetch the current notes for the file
+    //             // const fileNotes = this.getAllNotes(uri.fsPath);
+    //             // const updatedNotes: FileNotes = {};
+
+    //             // const diffs = await this.getDiffs(repository, uri.fsPath);
+
+    //             // diffs.forEach((diff: any) => {
+    //             //     const startLine = diff.startLine;
+    //             //     const endLine = diff.endLine;
+    //             //     const lineDelta = diff.lineDelta;
+
+    //             //     Object.keys(fileNotes).forEach(lineNumberStr => {
+    //             //         const lineNumber = parseInt(lineNumberStr, 10);
+    //             //         const notes = fileNotes[lineNumberStr];
+
+    //             //         notes.forEach(note => {
+    //             //             let newLineNumber = lineNumber;
+                            
+    //             //             if (lineNumber > endLine) {
+    //             //                 newLineNumber += lineDelta;
+    //             //             } else if (lineNumber >= startLine && lineNumber <= endLine) {
+    //             //                 newLineNumber = startLine;
+    //             //             }
+
+    //             //             // Fetch the new file text at the updated line number
+    //             //             const newFileText = document.lineAt(newLineNumber).text;
+
+    //             //             // Update the note
+    //             //             note.lineNumber = newLineNumber;
+    //             //             note.fileText = newFileText;
+    //             //         });
+
+    //             //         const updatedLineNumber = notes[0].lineNumber;
+
+    //             //         if (!updatedNotes[updatedLineNumber]) {
+    //             //             updatedNotes[updatedLineNumber] = [];
+    //             //         }
+
+    //             //         updatedNotes[updatedLineNumber].push(...notes);
+    //             //     });
+    //             // });
+
+    //             // // Save the updated notes
+    //             // this.updateFileNotes(updatedNotes);
+    //         }
+    //     }
+    // }
+
+    // /**
+    //  * Fetch diffs from the repository
+    //  * 
+    //  * @param repository - The Git repository.
+    //  * @param filePath - The path of the file to fetch diffs for.
+    //  * @returns An array of diffs.
+    //  */
+    // async getDiffs(repository: any, filePath: string): Promise<any[]> {
+    //     // Implement logic to fetch diffs from the repository
+    //     // You can use repository.diffWithHEAD or similar methods to get diffs
+    //     // Return an array of diffs with startLine, endLine, and lineDelta
+    //     const diffs = await repository.diffWithHEAD(filePath);
+    //     return diffs.map((diff: any) => {
+    //         return {
+    //             startLine: diff.range.start.line,
+    //             endLine: diff.range.end.line,
+    //             lineDelta: diff.text.split('\n').length - (diff.range.end.line - diff.range.start.line + 1)
+    //         };
+    //     });
+    // }
 }
 
 export default NoteManager;
