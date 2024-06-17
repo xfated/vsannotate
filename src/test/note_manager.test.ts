@@ -1,142 +1,164 @@
-import * as assert from 'assert';
-import NoteManager from '../note_manager';
-import * as sinon from 'sinon';
-import { ExtensionContext, extensions } from 'vscode';
-import { NoteData } from '../types';
+import * as assert from "assert";
+import NoteManager from "../note_manager";
+import * as sinon from "sinon";
+import { ExtensionContext, extensions } from "vscode";
+import { NoteData } from "../types";
+import { GitHelper } from "../git_helper";
 
-suite('NoteManager tests', () => {
-    let extensionContext: ExtensionContext;
-    let noteManager: NoteManager;
-    suiteSetup(async () => {
-        // Trigger extension activation and grab the context
-        extensionContext = await extensions.getExtension('xfated.vsannotate')?.activate();
-        noteManager = new NoteManager(extensionContext)
-    });
+suite("NoteManager tests", () => {
+  let extensionContext: ExtensionContext;
+  let noteManager: NoteManager;
 
-    setup(() => {
-        // Stub the currentPath method to return a fixed path for testing
-        sinon.stub(noteManager, 'currentPath').returns('test/path');  
+  suiteSetup(async () => {
+    // Trigger extension activation and grab the context
+    extensionContext = await extensions
+      .getExtension("xfated.vsannotate")
+      ?.activate();
+    noteManager = new NoteManager(extensionContext, new GitHelper());
+  });
 
-        // Clean up all notes
-        noteManager.deleteAllNotes()
-    })
+  setup(() => {
+    // Stub the currentPath method to return a fixed path for testing
+    sinon.stub(noteManager, "currentPath").returns("test/path");
 
-    teardown(() => {
-        // Restore the original method after each test
-        sinon.restore();
-    });
+    // Clean up all notes
+    noteManager.deleteAllNotes();
+  });
 
-    test('Able to add, retrieve and delete note', () => {
-        const lineNumber = 1
-        const testData: NoteData = {
-            fileText: 'test text',
-            note: 'test note'
-        }
-        // Add note
-        noteManager.addNote(lineNumber, testData)
+  teardown(() => {
+    // Restore the original method after each test
+    sinon.restore();
+  });
 
-        // Retrieve note
-        const returnedNote = noteManager.getNotesAtLine(lineNumber)[0]
-        assert.strictEqual(testData.fileText, returnedNote.fileText)
-        assert.strictEqual(testData.note, returnedNote.note)
+  test("Able to add, retrieve and delete note", () => {
+    const lineNumber = 1;
+    const testData: NoteData = {
+      fileText: "test text",
+      note: "test note",
+    };
+    // Add note
+    noteManager.addNote(lineNumber, testData);
 
-        // Delete note
-        noteManager.deleteNote(lineNumber)
-        const returnedNotes = noteManager.getNotesAtLine(lineNumber)
-        assert.strictEqual(0, returnedNotes.length)
-    })
+    // Retrieve note
+    const returnedNote = noteManager.getNotesAtLine(lineNumber)[0];
+    assert.strictEqual(testData.fileText, returnedNote.fileText);
+    assert.strictEqual(testData.note, returnedNote.note);
 
-    test('Able to add multiple notes', () => {
-        // Add notes
-        const lineNumberOne = 1
-        const testDataOne: NoteData = {
-            fileText: 'test text one',
-            note: 'test note one'
-        }
-        noteManager.addNote(lineNumberOne, testDataOne)
+    // Delete note
+    noteManager.deleteNote(lineNumber);
+    const returnedNotes = noteManager.getNotesAtLine(lineNumber);
+    assert.strictEqual(0, returnedNotes.length);
+  });
 
-        const lineNumberTwo = 2
-        const testDataTwo: NoteData = {
-            fileText: 'test text two',
-            note: 'test note two'
-        }
-        noteManager.addNote(lineNumberTwo, testDataTwo)
+  test("Able to add multiple notes", () => {
+    // Add notes
+    const lineNumberOne = 1;
+    const testDataOne: NoteData = {
+      fileText: "test text one",
+      note: "test note one",
+    };
+    noteManager.addNote(lineNumberOne, testDataOne);
 
-        // Retrieve notes
-        const returnedNoteOne = noteManager.getNotesAtLine(lineNumberOne)[0]
-        assert.strictEqual(testDataOne.fileText, returnedNoteOne.fileText)
-        assert.strictEqual(testDataOne.note, returnedNoteOne.note)
-        
-        const returnedNoteTwo = noteManager.getNotesAtLine(lineNumberTwo)[0]
-        assert.strictEqual(testDataTwo.fileText, returnedNoteTwo.fileText)
-        assert.strictEqual(testDataTwo.note, returnedNoteTwo.note)
+    const lineNumberTwo = 2;
+    const testDataTwo: NoteData = {
+      fileText: "test text two",
+      note: "test note two",
+    };
+    noteManager.addNote(lineNumberTwo, testDataTwo);
 
-        // Delete note should not affect other notes
-        noteManager.deleteNote(lineNumberOne)
-        const returnedNotesOneAfterDeletion = noteManager.getNotesAtLine(lineNumberOne)
-        assert.strictEqual(0, returnedNotesOneAfterDeletion.length)
-          
-        const returnedNoteTwoAfterDeletion = noteManager.getNotesAtLine(lineNumberTwo)[0]
-        assert.strictEqual(testDataTwo.fileText, returnedNoteTwoAfterDeletion.fileText)
-        assert.strictEqual(testDataTwo.note, returnedNoteTwoAfterDeletion.note)
-    })
+    // Retrieve notes
+    const returnedNoteOne = noteManager.getNotesAtLine(lineNumberOne)[0];
+    assert.strictEqual(testDataOne.fileText, returnedNoteOne.fileText);
+    assert.strictEqual(testDataOne.note, returnedNoteOne.note);
 
-    test('Able to update note', async () => {
-        const lineNumber = 1
-        const testData: NoteData = {
-            fileText: 'test text',
-            note: 'test note'
-        }
-        // Add note
-        noteManager.addNote(lineNumber, testData)
+    const returnedNoteTwo = noteManager.getNotesAtLine(lineNumberTwo)[0];
+    assert.strictEqual(testDataTwo.fileText, returnedNoteTwo.fileText);
+    assert.strictEqual(testDataTwo.note, returnedNoteTwo.note);
 
-        // Retrieve note
-        const returnedNote = noteManager.getNotesAtLine(lineNumber)[0]
-        assert.strictEqual(testData.fileText, returnedNote.fileText)
-        assert.strictEqual(testData.note, returnedNote.note)
-        assert.ok(returnedNote.createdAt, 'createdAt should exist on the returned note');
-        assert.ok(returnedNote.updatedAt, 'updatedAt should exist on the returned note');
-    
+    // Delete note should not affect other notes
+    noteManager.deleteNote(lineNumberOne);
+    const returnedNotesOneAfterDeletion =
+      noteManager.getNotesAtLine(lineNumberOne);
+    assert.strictEqual(0, returnedNotesOneAfterDeletion.length);
 
-        // Update note after 100ms
-        // Wait for 1ms
-        await new Promise(resolve => setTimeout(resolve, 1));
+    const returnedNoteTwoAfterDeletion =
+      noteManager.getNotesAtLine(lineNumberTwo)[0];
+    assert.strictEqual(
+      testDataTwo.fileText,
+      returnedNoteTwoAfterDeletion.fileText
+    );
+    assert.strictEqual(testDataTwo.note, returnedNoteTwoAfterDeletion.note);
+  });
 
-        testData.note = "new note"
-        noteManager.addNote(lineNumber, testData)
-        const updatedReturnedNote = noteManager.getNotesAtLine(lineNumber)[0]
-        assert.strictEqual(testData.fileText, updatedReturnedNote.fileText)
-        assert.strictEqual(testData.note, updatedReturnedNote.note)
-        assert.strictEqual(updatedReturnedNote.createdAt, returnedNote.createdAt, 'createdAt should remain the same after update');
-        assert.notStrictEqual(updatedReturnedNote.updatedAt, returnedNote.updatedAt, 'updatedAt should change after update');
-    })
+  test("Able to update note", async () => {
+    const lineNumber = 1;
+    const testData: NoteData = {
+      fileText: "test text",
+      note: "test note",
+    };
+    // Add note
+    noteManager.addNote(lineNumber, testData);
 
-    test('Able to fetch all notes', async ()=> {
-        // Add notes
-        const lineNumberOne = 1
-        const testDataOne: NoteData = {
-            fileText: 'test text one',
-            note: 'test note one'
-        }
-        noteManager.addNote(lineNumberOne, testDataOne)
+    // Retrieve note
+    const returnedNote = noteManager.getNotesAtLine(lineNumber)[0];
+    assert.strictEqual(testData.fileText, returnedNote.fileText);
+    assert.strictEqual(testData.note, returnedNote.note);
+    assert.ok(
+      returnedNote.createdAt,
+      "createdAt should exist on the returned note"
+    );
+    assert.ok(
+      returnedNote.updatedAt,
+      "updatedAt should exist on the returned note"
+    );
 
-        const lineNumberTwo = 2
-        const testDataTwo: NoteData = {
-            fileText: 'test text two',
-            note: 'test note two'
-        }
-        noteManager.addNote(lineNumberTwo, testDataTwo)
+    // Update note after 100ms
+    // Wait for 1ms
+    await new Promise((resolve) => setTimeout(resolve, 1));
 
-        // Retrieve notes
-        const allNotes = noteManager.getAllNotes()
-        assert.strictEqual(2, Object.keys(allNotes).length)
+    testData.note = "new note";
+    noteManager.addNote(lineNumber, testData);
+    const updatedReturnedNote = noteManager.getNotesAtLine(lineNumber)[0];
+    assert.strictEqual(testData.fileText, updatedReturnedNote.fileText);
+    assert.strictEqual(testData.note, updatedReturnedNote.note);
+    assert.strictEqual(
+      updatedReturnedNote.createdAt,
+      returnedNote.createdAt,
+      "createdAt should remain the same after update"
+    );
+    assert.notStrictEqual(
+      updatedReturnedNote.updatedAt,
+      returnedNote.updatedAt,
+      "updatedAt should change after update"
+    );
+  });
 
-        const noteOne = allNotes[lineNumberOne][0]
-        assert.strictEqual(testDataOne.fileText, noteOne.fileText)
-        assert.strictEqual(testDataOne.note, noteOne.note)
-        
-        const noteTwo = allNotes[lineNumberTwo][0]
-        assert.strictEqual(testDataTwo.fileText, noteTwo.fileText)
-        assert.strictEqual(testDataTwo.note, noteTwo.note)
-    })
-})
+  test("Able to fetch all notes", async () => {
+    // Add notes
+    const lineNumberOne = 1;
+    const testDataOne: NoteData = {
+      fileText: "test text one",
+      note: "test note one",
+    };
+    noteManager.addNote(lineNumberOne, testDataOne);
+
+    const lineNumberTwo = 2;
+    const testDataTwo: NoteData = {
+      fileText: "test text two",
+      note: "test note two",
+    };
+    noteManager.addNote(lineNumberTwo, testDataTwo);
+
+    // Retrieve notes
+    const allNotes = noteManager.getAllNotes();
+    assert.strictEqual(2, Object.keys(allNotes).length);
+
+    const noteOne = allNotes[lineNumberOne][0];
+    assert.strictEqual(testDataOne.fileText, noteOne.fileText);
+    assert.strictEqual(testDataOne.note, noteOne.note);
+
+    const noteTwo = allNotes[lineNumberTwo][0];
+    assert.strictEqual(testDataTwo.fileText, noteTwo.fileText);
+    assert.strictEqual(testDataTwo.note, noteTwo.note);
+  });
+});
