@@ -13,6 +13,7 @@ interface DiffResult {
 
 class GitHelper {
   public git: API | undefined;
+  public previousCommit: string | null = null;
 
   constructor() {
     const gitExtension =
@@ -20,8 +21,11 @@ class GitHelper {
     if (gitExtension) {
       this.git = gitExtension.getAPI(1);
     }
+
+    // Set initial commit
+    this.didCommitChange();
   }
-  
+
   /**
    * Executes a Git command to get the commit hash of the current code at runtime.
    * Using child process to manually extract git commit because Git API doesn't reliably
@@ -49,6 +53,15 @@ class GitHelper {
         console.error(`Failed to get current commit hash: ${error.message}`);
         return null;
     }
+  }
+
+  async didCommitChange(): Promise<boolean> {
+    const currentCommit = await this.getCurrentCommit();
+    if (currentCommit !== this.previousCommit) {
+      this.previousCommit = currentCommit;
+      return true;
+    }
+    return false;
   }
 
   /**

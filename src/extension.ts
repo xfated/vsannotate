@@ -42,13 +42,26 @@ export function activate(context: vscode.ExtensionContext) {
   // Event listener for text document changes
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument(async (event) => {
-      const hasAdjustments = await noteManager.handleDocumentChange(event);
+      let hasAdjustments = await noteManager.handleDocumentChange(event);
 
       // Reapply decorations
       if (hasAdjustments) {
         notesViewer.addLinesUI(event.document);
       }
+
     })
+  );
+
+
+  // Use file watcher to detect git changes
+  const watcher = vscode.workspace.createFileSystemWatcher('**/*');
+  context.subscriptions.push(
+      watcher.onDidChange(async (uri) => {
+        // We only execute if the HEAD changes
+        if (await gitHelper.didCommitChange()) {
+          console.log("Commit changed")
+        }
+      })
   );
 
   // Register event listener for when a text document is opened
@@ -86,13 +99,6 @@ export function activate(context: vscode.ExtensionContext) {
       await notesViewer.generateNotesReadme(context, false);
     })
   );
-
-  // Add git hooks
-  if (gitHelper.git) {
-    context.subscriptions.push(gitHelper.git.onDidChangeState(() => {
-        console.log("Change state")
-    }));
-  }
 
   // Debug
   context.subscriptions.push(
