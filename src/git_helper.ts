@@ -134,99 +134,100 @@ class GitHelper {
    * @returns An object representing the file diffs.
    */
   parseDiff(diff: string): FileDiffs {
-      const fileDiffs: FileDiffs = {};
-      const diffLines = diff.split('\n');
+    // TODO: add test for parse diff
+    const fileDiffs: FileDiffs = {};
+    const diffLines = diff.split('\n');
 
-      const workspacePath = this.getWorkspacePath();
-      if (!workspacePath) {
-          return {};
-      }
-  
-      let currentFilePath: string | null = null;
-      let currentDiffResult: DiffResult | null = null;
-      let currentOldLineNumber = 0;
-      let currentNewLineNumber = 0;
-      let oldLineMap: Map<string, number[]> = new Map();
-      let newLineMap: Map<string, number[]> = new Map();
+    const workspacePath = this.getWorkspacePath();
+    if (!workspacePath) {
+        return {};
+    }
 
-      let index = 0;
-      while (index < diffLines.length) {
-        const line = diffLines[index]
-        // E.g. diff --git a/README.md b/README.md
-        const fileMatch = /^diff --git a\/(.+?) b\/(.+)$/.exec(line);
-        // E.g. @@ -3,10 +3,13 @@
-        const hunkMatch = /^@@ -(\d+),\d+ \+(\d+),\d+ @@/.exec(line);
+    let currentFilePath: string | null = null;
+    let currentDiffResult: DiffResult | null = null;
+    let currentOldLineNumber = 0;
+    let currentNewLineNumber = 0;
+    let oldLineMap: Map<string, number[]> = new Map();
+    let newLineMap: Map<string, number[]> = new Map();
 
-        if (fileMatch) {
-            // Record changes for previous file
-            if (currentFilePath && currentDiffResult) {
-                // Combine moved lines with add/removed movements
-                currentDiffResult.movedLines = {
-                  ...currentDiffResult.movedLines,
-                  ...this.detectMovedLines(oldLineMap, newLineMap)
-                };
-                fileDiffs[currentFilePath] = currentDiffResult;
-            }
+    let index = 0;
+    while (index < diffLines.length) {
+      const line = diffLines[index]
+      // E.g. diff --git a/README.md b/README.md
+      const fileMatch = /^diff --git a\/(.+?) b\/(.+)$/.exec(line);
+      // E.g. @@ -3,10 +3,13 @@
+      const hunkMatch = /^@@ -(\d+),\d+ \+(\d+),\d+ @@/.exec(line);
 
-            // Prep for new file
-            currentFilePath = `${workspacePath}/${fileMatch[2]}`;
-            currentDiffResult = { addedLines: {}, removedLines: {}, movedLines: {} };
-            oldLineMap = new Map();
-            newLineMap = new Map();
-
-            /** Skip next 3 lines E.g.
-             * index a1ca036..4813e3f 100644
-             * --- a/src/index.tsx
-             * +++ b/src/index.tsx
-             */
-            index += 3;
-        } else if (hunkMatch) {
-            currentOldLineNumber = parseInt(hunkMatch[1], 10);
-            currentNewLineNumber = parseInt(hunkMatch[2], 10);
-        } else if (currentDiffResult) {
-          if (line.startsWith('+')) {
-              const text = line.substring(1).trim(); // Remove + and trim
-              if (currentDiffResult.addedLines[text] == null) {
-                  currentDiffResult.addedLines[text] = [];
-              }
-              currentDiffResult.addedLines[text].push(currentNewLineNumber);
-              this.addToLineMap(newLineMap, text, currentNewLineNumber);
-              currentNewLineNumber++;
-          } else if (line.startsWith('-')) {
-              const text = line.substring(1).trim();
-              if (currentDiffResult.removedLines[text] == null) {
-                  currentDiffResult.removedLines[text] = [];
-              }
-              currentDiffResult.removedLines[text].push(currentOldLineNumber);
-              this.addToLineMap(oldLineMap, text, currentOldLineNumber);
-              currentOldLineNumber++;
-          } else {
-            const text = line.substring(1).trim();
-            if (currentOldLineNumber !== currentNewLineNumber) {
-              if (!currentDiffResult.movedLines[text]) {
-                currentDiffResult.movedLines[text] = [];
-              }
-              currentDiffResult.movedLines[text].push([currentOldLineNumber, currentNewLineNumber]);
-            }
-            currentOldLineNumber++;
-            currentNewLineNumber++;
+      if (fileMatch) {
+          // Record changes for previous file
+          if (currentFilePath && currentDiffResult) {
+              // Combine moved lines with add/removed movements
+              currentDiffResult.movedLines = {
+                ...currentDiffResult.movedLines,
+                ...this.detectMovedLines(oldLineMap, newLineMap)
+              };
+              fileDiffs[currentFilePath] = currentDiffResult;
           }
+
+          // Prep for new file
+          currentFilePath = `${workspacePath}/${fileMatch[2]}`;
+          currentDiffResult = { addedLines: {}, removedLines: {}, movedLines: {} };
+          oldLineMap = new Map();
+          newLineMap = new Map();
+
+          /** Skip next 3 lines E.g.
+           * index a1ca036..4813e3f 100644
+           * --- a/src/index.tsx
+           * +++ b/src/index.tsx
+           */
+          index += 3;
+      } else if (hunkMatch) {
+          currentOldLineNumber = parseInt(hunkMatch[1], 10);
+          currentNewLineNumber = parseInt(hunkMatch[2], 10);
+      } else if (currentDiffResult) {
+        if (line.startsWith('+')) {
+            const text = line.substring(1).trim(); // Remove + and trim
+            if (currentDiffResult.addedLines[text] == null) {
+                currentDiffResult.addedLines[text] = [];
+            }
+            currentDiffResult.addedLines[text].push(currentNewLineNumber);
+            this.addToLineMap(newLineMap, text, currentNewLineNumber);
+            currentNewLineNumber++;
+        } else if (line.startsWith('-')) {
+            const text = line.substring(1).trim();
+            if (currentDiffResult.removedLines[text] == null) {
+                currentDiffResult.removedLines[text] = [];
+            }
+            currentDiffResult.removedLines[text].push(currentOldLineNumber);
+            this.addToLineMap(oldLineMap, text, currentOldLineNumber);
+            currentOldLineNumber++;
+        } else {
+          const text = line.substring(1).trim();
+          if (currentOldLineNumber !== currentNewLineNumber) {
+            if (!currentDiffResult.movedLines[text]) {
+              currentDiffResult.movedLines[text] = [];
+            }
+            currentDiffResult.movedLines[text].push([currentOldLineNumber, currentNewLineNumber]);
+          }
+          currentOldLineNumber++;
+          currentNewLineNumber++;
         }
-        // Go to next line
-        index += 1;
-      };
-
-      // Add the last file's diff result
-      if (currentFilePath && currentDiffResult) {
-        // Combine moved lines with add/removed movements
-          currentDiffResult.movedLines = {
-            ...currentDiffResult.movedLines,
-            ...this.detectMovedLines(oldLineMap, newLineMap)
-          };
-          fileDiffs[currentFilePath] = currentDiffResult;
       }
+      // Go to next line
+      index += 1;
+    };
 
-      return fileDiffs;
+    // Add the last file's diff result
+    if (currentFilePath && currentDiffResult) {
+      // Combine moved lines with add/removed movements
+        currentDiffResult.movedLines = {
+          ...currentDiffResult.movedLines,
+          ...this.detectMovedLines(oldLineMap, newLineMap)
+        };
+        fileDiffs[currentFilePath] = currentDiffResult;
+    }
+
+    return fileDiffs;
   }
 
   // Helper to initialize array if key doesn't exist

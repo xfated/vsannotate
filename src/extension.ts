@@ -59,6 +59,8 @@ export function activate(context: vscode.ExtensionContext) {
       watcher.onDidChange(async (uri) => {
         // We only execute if the HEAD changes
         if (await gitHelper.didCommitChange()) {
+          // TODO: go through all notes, cache diffs (new commit -> old commit -> file diffs)
+          // Handle new note location or become lost note
           gitHelper.getDiffWithHead('28c7b10e93626065d02e56eaf2e3754a18f59821')
         }
       })
