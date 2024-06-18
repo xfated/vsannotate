@@ -41,10 +41,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Event listener for text document changes
   context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument((event) => {
-      gitHelper.getDiffWithHead();
-
-      const hasAdjustments = noteManager.handleDocumentChange(event);
+    vscode.workspace.onDidChangeTextDocument(async (event) => {
+      const hasAdjustments = await noteManager.handleDocumentChange(event);
 
       // Reapply decorations
       if (hasAdjustments) {
@@ -86,6 +84,20 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("vsannotate.generateReadme", async () => {
       await notesViewer.generateNotesReadme(context, false);
+    })
+  );
+
+  // Add git hooks
+  if (gitHelper.git) {
+    context.subscriptions.push(gitHelper.git.onDidChangeState(() => {
+        console.log("Change state")
+    }));
+  }
+
+  // Debug
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vsannotate.debug", async () => {
+      console.log(noteManager.getNotesPrettyString())
     })
   );
 

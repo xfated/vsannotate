@@ -50,12 +50,9 @@ class NoteManager {
    * @param lineNumber line number the cursor is add
    * @param note note details
    */
-  addNote(lineNumber: number, noteData: NoteData): void {
-    console.log(`TEST 3`);
+  async addNote(lineNumber: number, noteData: NoteData): Promise<void> {
     const lineNumberStr = String(lineNumber);
-    console.log(`TEST 1`);
-    const currentCommit = gitHelper.getCurrentCommit();
-    console.log(`TEST 2`);
+    const currentCommit = await gitHelper.getCurrentCommit();
     // Get file path
     const file_path = this.currentPath();
     if (file_path === null) {
@@ -77,7 +74,6 @@ class NoteManager {
       ...noteData,
       ...(currentCommit ? { currentCommit } : {}),
     };
-    console.log(`TEST ${JSON.stringify(newNote)}`);
     fileNotes[lineNumberStr] = [newNote];
     this.updateFileNotes(fileNotes);
   }
@@ -177,14 +173,15 @@ class NoteManager {
   }
 
   /**
-   * Handles changes to the text document and updates note line numbers.
+   * Handles changes to the text document due to own updates
+   * and updates note line numbers.
    *
    * @param event - The text document change event.
    */
-  handleDocumentChange(event: vscode.TextDocumentChangeEvent) {
+  async handleDocumentChange(event: vscode.TextDocumentChangeEvent): Promise<boolean> {
     const document = event.document;
     const filePath = document.fileName;
-    const currentCommit = gitHelper.getCurrentCommit();
+    const currentCommit = await gitHelper.getCurrentCommit();
 
     // Fetch the current notes for the file
     const fileNotes = this.getAllNotes(filePath);
@@ -203,10 +200,9 @@ class NoteManager {
         notes.forEach((note) => {
           // is change due to git, ignore and handle separately
           if (
-            note.currentCommit != null ||
+            note.currentCommit != null &&
             note.currentCommit !== currentCommit
           ) {
-            console.log("RETURNING");
             return;
           }
           let newLineNumber = note.lineNumber;

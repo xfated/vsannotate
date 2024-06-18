@@ -1,6 +1,10 @@
 // Helper class for interacting with git
 import * as vscode from "vscode";
 import { API, GitExtension, Repository } from "../types/git";
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execPromise = promisify(exec);
 
 interface DiffResult {
   addedLines: { line: string; lineNumber: number }[];
@@ -8,7 +12,7 @@ interface DiffResult {
 }
 
 class GitHelper {
-  private git: API | undefined;
+  public git: API | undefined;
 
   constructor() {
     const gitExtension =
@@ -17,23 +21,34 @@ class GitHelper {
       this.git = gitExtension.getAPI(1);
     }
   }
-
+  
   /**
-   * Gets the current commit hash.
+   * Executes a Git command to get the commit hash of the current code at runtime.
+   * Using child process to manually extract git commit because Git API doesn't reliably
+   * return current git commit
    * @returns The current commit hash or an error message if it cannot be retrieved.
    */
-  public getCurrentCommit(): string | null {
-    const repository = this.getGitRepository();
-    if (repository === null) return null;
+  async getCurrentCommit(): Promise<string | null> {
+    
+    try {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            vscode.window.showErrorMessage('No workspace folder found.');
+            return null;
+        }
 
-    const head = repository.state.HEAD;
+        const workspacePath = workspaceFolders[0].uri.fsPath;
 
-    if (head && head.commit) {
-      return head.commit;
-    } else {
-      console.error("Could not retrieve the current commit hash.");
+        // Execute the git command to get the current commit hash
+        const { stdout } = await execPromise('git rev-parse HEAD', { cwd: workspacePath });
+        const commitHash = stdout.trim();
+
+        return commitHash;
+    } catch (err) {
+        const error = err as Error
+        console.error(`Failed to get current commit hash: ${error.message}`);
+        return null;
     }
-    return null;
   }
 
   /**
@@ -63,7 +78,7 @@ class GitHelper {
       // }
 
       const diffs = await repository.diffBlobs(
-        "28c7b10e93626065d02e56eaf2e3754a18f59821",
+        curCommit,
         "HEAD"
       );
       console.log(`[TEST] ${diffs}`);

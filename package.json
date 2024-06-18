@@ -5,7 +5,7 @@
   "version": "0.0.1",
   "publisher": "xfated",
   "engines": {
-    "vscode": "^1.54.0"
+    "vscode": "^1.89.0"
   },
   "categories": [
     "Other"
@@ -23,6 +23,10 @@
       {
         "command": "vsannotate.generateReadme",
         "title": "VsAnnotate: Show All Notes"
+      },
+      {
+        "command": "vsannotate.debug",
+        "title": "VsAnnotate: Debug"
       }
     ],
     "menus": {
@@ -31,6 +35,11 @@
           "command": "vsannotate.addAnnotation",
           "group": "z_commands",
           "when": "false"
+        },
+        {
+          "command": "vsannotate.addAnnotation",
+          "group": "z_commands",
+          "when": "true" 
         }
       ],
       "editor/context": [

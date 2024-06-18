@@ -29,14 +29,14 @@ suite("NoteManager tests", () => {
     sinon.restore();
   });
 
-  test("Able to add, retrieve and delete note", () => {
+  test("Able to add, retrieve and delete note", async () => {
     const lineNumber = 1;
     const testData: NoteData = {
       fileText: "test text",
       note: "test note",
     };
     // Add note
-    noteManager.addNote(lineNumber, testData);
+    await noteManager.addNote(lineNumber, testData);
 
     // Retrieve note
     const returnedNote = noteManager.getNotesAtLine(lineNumber)[0];
@@ -49,21 +49,21 @@ suite("NoteManager tests", () => {
     assert.strictEqual(0, returnedNotes.length);
   });
 
-  test("Able to add multiple notes", () => {
+  test("Able to add multiple notes", async () => {
     // Add notes
     const lineNumberOne = 1;
     const testDataOne: NoteData = {
       fileText: "test text one",
       note: "test note one",
     };
-    noteManager.addNote(lineNumberOne, testDataOne);
+    await noteManager.addNote(lineNumberOne, testDataOne);
 
     const lineNumberTwo = 2;
     const testDataTwo: NoteData = {
       fileText: "test text two",
       note: "test note two",
     };
-    noteManager.addNote(lineNumberTwo, testDataTwo);
+    await noteManager.addNote(lineNumberTwo, testDataTwo);
 
     // Retrieve notes
     const returnedNoteOne = noteManager.getNotesAtLine(lineNumberOne)[0];
@@ -96,7 +96,7 @@ suite("NoteManager tests", () => {
       note: "test note",
     };
     // Add note
-    noteManager.addNote(lineNumber, testData);
+    await noteManager.addNote(lineNumber, testData);
 
     // Retrieve note
     const returnedNote = noteManager.getNotesAtLine(lineNumber)[0];
@@ -116,7 +116,7 @@ suite("NoteManager tests", () => {
     await new Promise((resolve) => setTimeout(resolve, 1));
 
     testData.note = "new note";
-    noteManager.addNote(lineNumber, testData);
+    await noteManager.addNote(lineNumber, testData);
     const updatedReturnedNote = noteManager.getNotesAtLine(lineNumber)[0];
     assert.strictEqual(testData.fileText, updatedReturnedNote.fileText);
     assert.strictEqual(testData.note, updatedReturnedNote.note);
@@ -139,14 +139,14 @@ suite("NoteManager tests", () => {
       fileText: "test text one",
       note: "test note one",
     };
-    noteManager.addNote(lineNumberOne, testDataOne);
+    await noteManager.addNote(lineNumberOne, testDataOne);
 
     const lineNumberTwo = 2;
     const testDataTwo: NoteData = {
       fileText: "test text two",
       note: "test note two",
     };
-    noteManager.addNote(lineNumberTwo, testDataTwo);
+    await noteManager.addNote(lineNumberTwo, testDataTwo);
 
     // Retrieve notes
     const allNotes = noteManager.getAllNotes();
