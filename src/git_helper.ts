@@ -7,7 +7,7 @@ interface DiffResult {
   removedLines: { line: string; lineNumber: number }[];
 }
 
-export class GitHelper {
+class GitHelper {
   private git: API | undefined;
 
   constructor() {
@@ -146,3 +146,6 @@ export class GitHelper {
     return repository;
   }
 }
+
+const gitHelper = new GitHelper()
+export default gitHelper

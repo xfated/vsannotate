@@ -1,7 +1,6 @@
 // Manage versions of note manager
 import * as vscode from "vscode";
 import NoteManager, { VERSION } from "./note_manager";
-import { GitHelper } from "./git_helper";
 
 export const METADATA_KEY = "[METADATA_KEY]";
 
@@ -20,7 +19,7 @@ const getNoteManager = (context: vscode.ExtensionContext): NoteManager => {
   }
   switch (metadata.version) {
     case VERSION:
-      return new NoteManager(context, new GitHelper());
+      return new NoteManager(context);
     default:
       throw Error("No appropriate version found");
   }

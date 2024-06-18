@@ -9,16 +9,14 @@ import type {
   VersionedFileNotes,
 } from "./types";
 import { v4 as uuidv4 } from "uuid";
-import { GitHelper } from "./git_helper";
+import gitHelper from "./git_helper";
 
 export const VERSION = "1.0";
 class NoteManager {
   context: vscode.ExtensionContext;
-  gitHelper: GitHelper;
 
-  constructor(context: vscode.ExtensionContext, gitHelper: GitHelper) {
+  constructor(context: vscode.ExtensionContext) {
     this.context = context;
-    this.gitHelper = gitHelper;
   }
 
   currentPath(): string | null {
@@ -56,7 +54,7 @@ class NoteManager {
     console.log(`TEST 3`);
     const lineNumberStr = String(lineNumber);
     console.log(`TEST 1`);
-    const currentCommit = this.gitHelper.getCurrentCommit();
+    const currentCommit = gitHelper.getCurrentCommit();
     console.log(`TEST 2`);
     // Get file path
     const file_path = this.currentPath();
@@ -186,7 +184,7 @@ class NoteManager {
   handleDocumentChange(event: vscode.TextDocumentChangeEvent) {
     const document = event.document;
     const filePath = document.fileName;
-    const currentCommit = this.gitHelper.getCurrentCommit();
+    const currentCommit = gitHelper.getCurrentCommit();
 
     // Fetch the current notes for the file
     const fileNotes = this.getAllNotes(filePath);

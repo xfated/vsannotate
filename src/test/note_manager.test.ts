@@ -3,7 +3,6 @@ import NoteManager from "../note_manager";
 import * as sinon from "sinon";
 import { ExtensionContext, extensions } from "vscode";
 import { NoteData } from "../types";
-import { GitHelper } from "../git_helper";
 
 suite("NoteManager tests", () => {
   let extensionContext: ExtensionContext;
@@ -14,7 +13,7 @@ suite("NoteManager tests", () => {
     extensionContext = await extensions
       .getExtension("xfated.vsannotate")
       ?.activate();
-    noteManager = new NoteManager(extensionContext, new GitHelper());
+    noteManager = new NoteManager(extensionContext);
   });
 
   setup(() => {
