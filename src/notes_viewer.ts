@@ -3,11 +3,8 @@
 import * as vscode from 'vscode';
 import NoteManager from './note_manager';
 import { FileNotes, Note } from './types';
-import { METADATA_KEY } from './version';
 import { v4 as uuidv4 } from 'uuid';
 
-// List of keys that are not used for storing notes
-const NON_NOTE_KEYS = new Set([METADATA_KEY]);
 
 class NotesViewer {
     noteManager: NoteManager;
@@ -165,12 +162,11 @@ class NotesViewer {
      */
     generateReadmeContent(context: vscode.ExtensionContext): string[] {
         // Iterate over all files and collect notes using NoteManager
-        const allNotes: { [fileName: string]: Note[] } = {};
+        const allNotes = this.noteManager.getAllNotes();
+        const allNotesList: { [fileName: string]: Note[] } = {};
 
-        for (const filePath of context.workspaceState.keys()) {
-            if (NON_NOTE_KEYS.has(filePath)) { continue }
-
-            const fileNotes: FileNotes = this.noteManager.getAllNotes(filePath)
+        for (const filePath of Object.keys(allNotes)) {
+            const fileNotes: FileNotes = allNotes[filePath];
             const fileNotesList: Note[] = [];
 
             Object.values(fileNotes).forEach(notes => {
@@ -178,12 +174,12 @@ class NotesViewer {
             })
 
             if (fileNotesList.length > 0) {
-                allNotes[filePath] = fileNotesList;
+                allNotesList[filePath] = fileNotesList;
             }
         }
         
         // Sort file names in alphabetical order
-        const sortedFileNames = Object.keys(allNotes).sort();
+        const sortedFileNames = Object.keys(allNotesList).sort();
 
         // Generate Markdown content
         const markdownLines: string[] = [];
@@ -191,7 +187,7 @@ class NotesViewer {
         markdownLines.push('');
 
         for (const filePath of sortedFileNames) {
-            const notes = allNotes[filePath];
+            const notes = allNotesList[filePath];
 
             // Sort notes by updatedAt in descending order
             notes.sort((a, b) => b.updatedAt - a.updatedAt);

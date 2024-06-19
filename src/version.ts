@@ -1,8 +1,7 @@
 // Manage versions of note manager
 import * as vscode from "vscode";
 import NoteManager, { VERSION } from "./note_manager";
-
-export const METADATA_KEY = "[METADATA_KEY]";
+import { METADATA_KEY } from "./constants";
 
 interface Metadata {
   version: string;

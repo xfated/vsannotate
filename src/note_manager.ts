@@ -10,8 +10,12 @@ import type {
 } from "./types";
 import { v4 as uuidv4 } from "uuid";
 import gitHelper from "./git_helper";
+import { METADATA_KEY } from "./constants";
 
 export const VERSION = "1.0";
+// List of keys that are not used for storing notes
+const NON_NOTE_KEYS = new Set([METADATA_KEY]);
+
 class NoteManager {
   context: vscode.ExtensionContext;
 
@@ -158,9 +162,25 @@ class NoteManager {
    * Get all notes in a file.
    * @param inputFilePath use current activeTextEditor path if not specified
    */
-  getAllNotes(inputFilePath?: string): FileNotes {
+  getAllNotesInFile(inputFilePath?: string): FileNotes {
     const fileNotes = this.fetchFileNotes({ inputFilePath });
     return fileNotes;
+  }
+
+  /**
+   * Get all notes
+   */
+  getAllNotes(): { [fileName: string]: FileNotes } {
+    // Iterate over all files and collect notes using NoteManager
+    const allNotes: { [fileName: string]: FileNotes } = {};
+
+    for (const filePath of this.context.workspaceState.keys()) {
+        if (NON_NOTE_KEYS.has(filePath)) { continue; }
+
+        const fileNotes: FileNotes = this.getAllNotesInFile(filePath);
+        allNotes[filePath] = fileNotes;
+    }
+    return allNotes;
   }
 
   /**
@@ -184,7 +204,7 @@ class NoteManager {
     const currentCommit = await gitHelper.getCurrentCommit();
 
     // Fetch the current notes for the file
-    const fileNotes = this.getAllNotes(filePath);
+    const fileNotes = this.getAllNotesInFile(filePath);
     const updatedNotes: FileNotes = {};
 
     let hasChange = false;

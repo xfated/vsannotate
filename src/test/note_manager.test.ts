@@ -149,7 +149,7 @@ suite("NoteManager tests", () => {
     await noteManager.addNote(lineNumberTwo, testDataTwo);
 
     // Retrieve notes
-    const allNotes = noteManager.getAllNotes();
+    const allNotes = noteManager.getAllNotesInFile();
     assert.strictEqual(2, Object.keys(allNotes).length);
 
     const noteOne = allNotes[lineNumberOne][0];
