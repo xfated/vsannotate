@@ -13,7 +13,7 @@ interface DiffResult {
   movedLines: { [text: string]: [number, number][] };
 }
 
-interface FileDiffs {
+export interface FileDiffs {
   [filePath: string]: DiffResult;
 }
 
@@ -79,40 +79,18 @@ class GitHelper {
    * @param commit - The commit hash to compare against the current HEAD.
    * @returns The diff as a string or an error message if it cannot be retrieved.
    */
-  public async getDiffWithHead(commit?: string): Promise<String[] | null> {
+  public async getDiffWithHead(fromCommit: string, toCommit: string): Promise<FileDiffs> {
     const repository = this.getGitRepository();
-    if (repository === null) return null;
+    if (repository === null) { throw new Error("No repository found")}
 
-    const curCommit = commit || (await this.getCurrentCommit());
-    if (curCommit == null) {
-      return null;
-    }
-
-    try {
-      const diffs = await repository.diffBlobs(
-        curCommit,
-        "HEAD"
-      );
-      console.log(`[TEST] ${JSON.stringify(this.parseDiff(diffs))}`);
-      // for (const diff of diffs) {
-      //     const uri = diff.uri
-      //     console.log(`[URI] ${uri}`)
-
-      //     const test = await repository.diff();
-      //     console.log(`[TEST] ${test}`)
-      // }
-      // const lineDiffs = diffs.map(diff => this.formatDiff(diff));
-      // console.log(`[CurCommit] ${curCommit}`)
-      // console.log(`[Changes] ${JSON.stringify(diffs[0].uri)}`)
-      // console.log(`[Changes] ${JSON.stringify(diffs[0].status)}`)
-      // return lineDiffs;
-
-      return [];
-    } catch (err) {
-      const error = err as Error;
-      console.error(`Could not retrieve the diff: ${error.message}`);
-      return null;
-    }
+    if (fromCommit == null || toCommit == null) {
+      throw new Error('Invalid commits given')
+    } 
+    const diffs = await repository.diffBlobs(
+      fromCommit,
+      toCommit,
+    );
+    return this.parseDiff(diffs)
   }
 
   /**

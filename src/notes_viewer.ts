@@ -94,6 +94,7 @@ class NotesViewer {
         editor.setDecorations(fileHighlights, decorations)
         // Set text decoration (text at end of line)
         editor.setDecorations(fileTextDecoration, noteDecorations);
+
         // Add notes for hover
         this.notesMap.set(document.fileName, documentNotes)
     }

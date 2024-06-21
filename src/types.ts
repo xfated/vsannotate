@@ -11,7 +11,7 @@ export interface Note extends NoteData{
     lineNumber: number
     createdAt: number // created at time in ms
     updatedAt: number // created at time in ms
-    currentCommit?: string
+    commit?: string
 }
 
 type Version = string

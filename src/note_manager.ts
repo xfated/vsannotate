@@ -9,16 +9,21 @@ import type {
   VersionedFileNotes,
 } from "./types";
 import { v4 as uuidv4 } from "uuid";
-import gitHelper from "./git_helper";
+import gitHelper, { FileDiffs } from "./git_helper";
 import { METADATA_KEY } from "./constants";
 
 export const VERSION = "1.0";
 // List of keys that are not used for storing notes
 const NON_NOTE_KEYS = new Set([METADATA_KEY]);
 
+interface CommitDiffs { 
+  [currentCommit: string]: {
+    [noteCommit: string]: FileDiffs
+  } 
+}
+
 class NoteManager {
   context: vscode.ExtensionContext;
-
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
   }
@@ -76,7 +81,7 @@ class NoteManager {
       lineNumber: existingNote?.lineNumber || lineNumber,
       updatedAt: Date.now(),
       ...noteData,
-      ...(currentCommit ? { currentCommit } : {}),
+      ...(currentCommit ? { commit: currentCommit } : {}),
     };
     fileNotes[lineNumberStr] = [newNote];
     this.updateFileNotes(fileNotes);
@@ -220,8 +225,8 @@ class NoteManager {
         notes.forEach((note) => {
           // is change due to git, ignore and handle separately
           if (
-            note.currentCommit != null &&
-            note.currentCommit !== currentCommit
+            note.commit != null &&
+            note.commit !== currentCommit
           ) {
             return;
           }
@@ -260,6 +265,41 @@ class NoteManager {
     }
 
     return hasChange;
+  }
+
+  commitDiffs: CommitDiffs  = {}
+  // { 
+  //   [currentCommit: string]: {
+  //     [noteCommit: string]: FileDiffs
+  //   } 
+  // }
+  async handleGitChange(): Promise<void> {
+    const allNotes = this.getAllNotes()
+    const currentCommit = await gitHelper.getCurrentCommit()
+    if (currentCommit == null) { return }
+
+    for (const filePath of Object.keys(allNotes)) {
+      const fileNotes: FileNotes = allNotes[filePath]
+      for (const lineNumber of Object.keys(fileNotes)) {
+        // Only have one note per row for now
+        const note = fileNotes[lineNumber][0];
+
+        // Only handle for commit changes
+        if (note.commit == null || note.commit === currentCommit) { continue; }
+      
+        // Get diffs for current commit
+        if (this.commitDiffs[currentCommit] == null) {
+          this.commitDiffs[currentCommit] = {};
+        }
+
+        // Get diff from note commit to currentCommit
+        if (this.commitDiffs[currentCommit][note.commit] == null) {
+          this.commitDiffs[currentCommit][note.commit] = await gitHelper.getDiffWithHead(note.commit, currentCommit)
+        } 
+        
+        const diffs: FileDiffs = this.commitDiffs[currentCommit][note.commit];
+      }
+    }
   }
 }
 

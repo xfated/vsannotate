@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(`${noteText}`);
 
       if (noteText.length > 0) {
-        noteManager.addNote(lineData.line.lineNumber, {
+        await noteManager.addNote(lineData.line.lineNumber, {
           fileText: lineData.text,
           note: noteText,
         });
@@ -48,7 +48,6 @@ export function activate(context: vscode.ExtensionContext) {
       if (hasAdjustments) {
         notesViewer.addLinesUI(event.document);
       }
-
     })
   );
 
@@ -59,9 +58,10 @@ export function activate(context: vscode.ExtensionContext) {
       watcher.onDidChange(async (uri) => {
         // We only execute if the HEAD changes
         if (await gitHelper.didCommitChange()) {
+          noteManager.handleGitChange()
           // TODO: go through all notes, cache diffs (new commit -> old commit -> file diffs)
           // Handle new note location or become lost note
-          gitHelper.getDiffWithHead('28c7b10e93626065d02e56eaf2e3754a18f59821')
+          // gitHelper.getDiffWithHead('28c7b10e93626065d02e56eaf2e3754a18f59821')
         }
       })
   );
