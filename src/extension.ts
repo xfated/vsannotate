@@ -59,9 +59,16 @@ export function activate(context: vscode.ExtensionContext) {
         // We only execute if the HEAD changes
         if (await gitHelper.didCommitChange()) {
           noteManager.handleGitChange()
-          // TODO: go through all notes, cache diffs (new commit -> old commit -> file diffs)
-          // Handle new note location or become lost note
-          // gitHelper.getDiffWithHead('28c7b10e93626065d02e56eaf2e3754a18f59821')
+
+           // Get the active text editor
+          const activeEditor = vscode.window.activeTextEditor;
+
+          // Check if there is an active text editor and get its document
+          if (activeEditor) {
+            const document = activeEditor.document;
+            // Pass the document to addLinesUI
+            notesViewer.addLinesUI(document);
+          }
         }
       })
   );

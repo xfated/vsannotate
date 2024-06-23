@@ -79,7 +79,7 @@ class GitHelper {
    * @param commit - The commit hash to compare against the current HEAD.
    * @returns The diff as a string or an error message if it cannot be retrieved.
    */
-  public async getDiffWithHead(fromCommit: string, toCommit: string): Promise<FileDiffs> {
+  public async getDiff(fromCommit: string, toCommit: string): Promise<FileDiffs> {
     const repository = this.getGitRepository();
     if (repository === null) { throw new Error("No repository found")}
 

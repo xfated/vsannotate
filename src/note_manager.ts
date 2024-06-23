@@ -239,8 +239,10 @@ class NoteManager {
             // For git related multi line changes, the change includes all text from first to last line
             // So we only search within the changed lines
             // Only reaches here if there was a multi line paste on the target line
-            hasChange = true;
-            newLineNumber = startLine;
+            if (document.lineAt(note.lineNumber).text != note.fileText) {
+              hasChange = true;
+              newLineNumber = startLine;
+            }
           }
 
           // Fetch the new file text at the updated line number
@@ -294,12 +296,26 @@ class NoteManager {
 
         // Get diff from note commit to currentCommit
         if (this.commitDiffs[currentCommit][note.commit] == null) {
-          this.commitDiffs[currentCommit][note.commit] = await gitHelper.getDiffWithHead(note.commit, currentCommit)
+          this.commitDiffs[currentCommit][note.commit] = await gitHelper.getDiff(note.commit, currentCommit)
         } 
         
         const diffs: FileDiffs = this.commitDiffs[currentCommit][note.commit];
+
+        // If file not in diff, ignore
+        if (diffs[filePath] == null) { continue }
+
+        const movedLines = diffs[filePath]["movedLines"]
+        console.log(note.fileText)
+        console.log(movedLines)
+        const movedIndexes = movedLines[note.fileText]
+        console.log(movedIndexes)
+        if (movedIndexes == null || movedIndexes.length == 0) { continue }
+
+        console.log(movedIndexes)
+        // allNotes[filePath][lineNumber] = [newNote]
       }
     }
+    // Save all notes
   }
 }
 
