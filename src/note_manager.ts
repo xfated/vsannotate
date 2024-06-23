@@ -16,10 +16,9 @@ export const VERSION = "1.0";
 // List of keys that are not used for storing notes
 const NON_NOTE_KEYS = new Set([METADATA_KEY]);
 
+// Holds diff from noteCommit to currentCommit
 interface CommitDiffs { 
-  [currentCommit: string]: {
-    [noteCommit: string]: FileDiffs
-  } 
+  [noteCommit: string]: FileDiffs
 }
 
 class NoteManager {
@@ -118,16 +117,16 @@ class NoteManager {
    * @param fileNotes all notes in a file
    * @param version specific version if any
    */
-  updateFileNotes(fileNotes: FileNotes, version?: string): void {
+  updateFileNotes(fileNotes: FileNotes, filePath?: string, version?: string): void {
     // Get file path
-    const file_path = this.currentPath();
-    if (file_path === null) {
+    const path = filePath || this.currentPath();
+    if (path === null) {
       throw new Error("File path not found");
     }
     const versionedFileNotes: VersionedFileNotes =
-      this.context.workspaceState.get(file_path) || {};
+      this.context.workspaceState.get(path) || {};
     versionedFileNotes[version || VERSION] = fileNotes;
-    this.context.workspaceState.update(file_path, versionedFileNotes);
+    this.context.workspaceState.update(path, versionedFileNotes);
   }
   /**
    * Helper to gets all notes found in current active file in the editor
@@ -186,6 +185,15 @@ class NoteManager {
         allNotes[filePath] = fileNotes;
     }
     return allNotes;
+  }
+
+  /**
+   * Saves all notes
+   */
+  saveAllNotes(allNotes: { [fileName: string]: FileNotes }) {
+    for (const [filePath, fileNotes] of Object.entries(allNotes)) {
+      this.updateFileNotes(fileNotes, filePath);
+    }
   }
 
   /**
@@ -269,19 +277,18 @@ class NoteManager {
     return hasChange;
   }
 
-  commitDiffs: CommitDiffs  = {}
-  // { 
-  //   [currentCommit: string]: {
-  //     [noteCommit: string]: FileDiffs
-  //   } 
-  // }
   async handleGitChange(): Promise<void> {
-    const allNotes = this.getAllNotes()
-    const currentCommit = await gitHelper.getCurrentCommit()
-    if (currentCommit == null) { return }
+    const commitDiffs: CommitDiffs  = {};
+    /** Handle each git change separately */
+    
+    const allNotes = this.getAllNotes();
+    const newNotes = structuredClone(allNotes);
+    const currentCommit = await gitHelper.getCurrentCommit();
+
+    if (currentCommit == null) { return; }
 
     for (const filePath of Object.keys(allNotes)) {
-      const fileNotes: FileNotes = allNotes[filePath]
+      const fileNotes: FileNotes = allNotes[filePath];
       for (const lineNumber of Object.keys(fileNotes)) {
         // Only have one note per row for now
         const note = fileNotes[lineNumber][0];
@@ -289,33 +296,36 @@ class NoteManager {
         // Only handle for commit changes
         if (note.commit == null || note.commit === currentCommit) { continue; }
       
-        // Get diffs for current commit
-        if (this.commitDiffs[currentCommit] == null) {
-          this.commitDiffs[currentCommit] = {};
-        }
-
         // Get diff from note commit to currentCommit
-        if (this.commitDiffs[currentCommit][note.commit] == null) {
-          this.commitDiffs[currentCommit][note.commit] = await gitHelper.getDiff(note.commit, currentCommit)
+        if (commitDiffs[note.commit] == null) {
+          commitDiffs[note.commit] = await gitHelper.getDiff(note.commit, currentCommit);
         } 
         
-        const diffs: FileDiffs = this.commitDiffs[currentCommit][note.commit];
+        const diffs: FileDiffs = commitDiffs[note.commit];
 
         // If file not in diff, ignore
-        if (diffs[filePath] == null) { continue }
+        if (diffs[filePath] == null) { continue; }
 
-        const movedLines = diffs[filePath]["movedLines"]
-        console.log(note.fileText)
-        console.log(movedLines)
-        const movedIndexes = movedLines[note.fileText]
-        console.log(movedIndexes)
-        if (movedIndexes == null || movedIndexes.length == 0) { continue }
+        const movedLines = diffs[filePath]["movedLines"];
+        const movedIndexes = movedLines[note.fileText];
+        if (movedIndexes == null || movedIndexes.length === 0) { continue; }
+        
+        // Update index if text is found in movedLines.
+        const index = movedIndexes.findIndex(indexes => indexes[0] === note.lineNumber); 
+        if (index === -1) { continue; }
 
-        console.log(movedIndexes)
-        // allNotes[filePath][lineNumber] = [newNote]
+        // Remove from diffs, and update note
+        const [[oldLine, newLine]] = movedIndexes.splice(index, 1);
+        note.lineNumber = newLine;
+        note.commit = currentCommit;
+        // Update new hash
+        delete newNotes[filePath][lineNumber];
+        newNotes[filePath][newLine] = [note];
       }
     }
+
     // Save all notes
+    this.saveAllNotes(allNotes);
   }
 }
 

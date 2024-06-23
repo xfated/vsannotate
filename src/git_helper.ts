@@ -7,10 +7,11 @@ import { promisify } from 'util';
 const execPromise = promisify(exec);
 
 // Stores text in file, and all the line numbers
+type movedLinesArray = { [text: string]: [number, number][] };
 interface DiffResult {
   addedLines: { [text: string]: number[] };
   removedLines: { [text: string]: number[] };
-  movedLines: { [text: string]: [number, number][] };
+  movedLines: movedLinesArray
 }
 
 export interface FileDiffs {
@@ -140,10 +141,10 @@ class GitHelper {
           // Record changes for previous file
           if (currentFilePath && currentDiffResult) {
               // Combine moved lines with add/removed movements
-              currentDiffResult.movedLines = {
-                ...currentDiffResult.movedLines,
-                ...this.detectMovedLines(oldLineMap, newLineMap)
-              };
+              currentDiffResult.movedLines = this.mergeMovedLinesArrays(
+                currentDiffResult.movedLines,
+                this.detectMovedLines(oldLineMap, newLineMap)
+              );
               fileDiffs[currentFilePath] = currentDiffResult;
           }
 
@@ -160,8 +161,9 @@ class GitHelper {
            */
           index += 3;
       } else if (hunkMatch) {
-          currentOldLineNumber = parseInt(hunkMatch[1], 10);
-          currentNewLineNumber = parseInt(hunkMatch[2], 10);
+          // -1 because stored lineNumber is 0-indexed
+          currentOldLineNumber = parseInt(hunkMatch[1], 10) - 1;
+          currentNewLineNumber = parseInt(hunkMatch[2], 10) - 1;
       } else if (currentDiffResult) {
         if (line.startsWith('+')) {
             const text = line.substring(1).trim(); // Remove + and trim
@@ -198,10 +200,10 @@ class GitHelper {
     // Add the last file's diff result
     if (currentFilePath && currentDiffResult) {
       // Combine moved lines with add/removed movements
-        currentDiffResult.movedLines = {
-          ...currentDiffResult.movedLines,
-          ...this.detectMovedLines(oldLineMap, newLineMap)
-        };
+        currentDiffResult.movedLines = this.mergeMovedLinesArrays(
+          currentDiffResult.movedLines,
+          this.detectMovedLines(oldLineMap, newLineMap)
+        );
         fileDiffs[currentFilePath] = currentDiffResult;
     }
 
@@ -209,22 +211,43 @@ class GitHelper {
   }
 
   // Helper to initialize array if key doesn't exist
-  addToLineMap(map: Map<string, number[]>, text: string, lineNumber: number) {
+  private addToLineMap(map: Map<string, number[]>, text: string, lineNumber: number) {
       if (!map.has(text)) {
           map.set(text, []);
       }
       map.get(text)?.push(lineNumber);
   }
 
+  // Expect value to be an array of arrays
+  private mergeMovedLinesArrays(obj1: movedLinesArray, obj2: movedLinesArray) {
+    const result = { ...obj1 };
+  
+    for (const key in obj2) {
+      if (obj2.hasOwnProperty(key)) {
+        if (result.hasOwnProperty(key) && Array.isArray(result[key]) && Array.isArray(obj2[key])) {
+          // Concatenate arrays if both are arrays
+          result[key] = result[key].concat(obj2[key]);
+        } else {
+          // Otherwise, just take the value from obj2
+          result[key] = obj2[key];
+        }
+      }
+    }
+  
+    return result;
+  }
+
   // For all removed lines, check if there is a similar added line and map them
-  detectMovedLines(oldLineMap: Map<string, number[]>, newLineMap: Map<string, number[]>): { [text: string]: [number, number][] } {
+  private detectMovedLines(oldLineMap: Map<string, number[]>, newLineMap: Map<string, number[]>): { [text: string]: [number, number][] } {
       const movedLines: { [text: string]: [number, number][] } = {};
 
       for (const [text, oldLines] of oldLineMap.entries()) {
           const newLines = newLineMap.get(text);
           // if exist in newLines
           if (newLines) {
-              movedLines[text] = [];
+              if (movedLines[text] == null) {
+                movedLines[text] = [];
+              }
               oldLines.forEach((oldLine, index) => {
                 // Assume first instance of new line is the moved line
                 if (index < newLines.length) {
