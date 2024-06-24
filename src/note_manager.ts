@@ -223,8 +223,10 @@ class NoteManager {
     let hasChange = false;
     // Adjust note line numbers based on the changes
     event.contentChanges.forEach((change) => {
+      // startLine/endLine for original text
       const startLine = change.range.start.line;
       const endLine = change.range.end.line;
+      // change.text for new line
       const lineDelta =
         change.text.split("\n").length - (endLine - startLine + 1);
 
@@ -238,6 +240,14 @@ class NoteManager {
           ) {
             return;
           }
+          // If note is already correct, don't move
+          if (document.lineAt(note.lineNumber).text === note.fileText) {
+            return;
+          }
+          // // In case change already handled by git
+          // if (document.lineAt(note.lineNumber).text === note.fileText) {
+          //   return;
+          // }
           let newLineNumber = note.lineNumber;
           if (newLineNumber > endLine) {
             // Move down if change before note
