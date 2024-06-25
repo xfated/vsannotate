@@ -14,10 +14,10 @@ export function activate(context: vscode.ExtensionContext) {
   const notesViewer = new NotesViewer(noteManager);
 
   // Reset state (For Debugging)
-  const keys = context.workspaceState.keys();
-  for (const key of keys) {
-    context.workspaceState.update(key, undefined);
-  }
+  // const keys = context.workspaceState.keys();
+  // for (const key of keys) {
+  //   context.workspaceState.update(key, undefined);
+  // }
 
   context.subscriptions.push(
     vscode.commands.registerCommand("vsannotate.addAnnotation", async () => {
@@ -68,17 +68,20 @@ export function activate(context: vscode.ExtensionContext) {
       watcher.onDidChange(async (uri) => {
         // We only execute if the HEAD changes
         if (await gitHelper.didCommitChange()) {
-          await noteManager.handleGitChange();
+          // Use a queue to ensure changes are made in order
+          taskQueue.addTask(async () => {
+            await noteManager.handleGitChange();
 
-           // Get the active text editor
-          const activeEditor = vscode.window.activeTextEditor;
+            // Get the active text editor
+            const activeEditor = vscode.window.activeTextEditor;
 
-          // Check if there is an active text editor and get its document
-          if (activeEditor) {
-            const document = activeEditor.document;
-            // Pass the document to addLinesUI
-            notesViewer.addLinesUI(document);
-          }
+            // Check if there is an active text editor and get its document
+            if (activeEditor) {
+              const document = activeEditor.document;
+              // Pass the document to addLinesUI
+              notesViewer.addLinesUI(document);
+            }
+          })
         }
       })
   );
