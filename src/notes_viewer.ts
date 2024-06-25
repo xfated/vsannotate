@@ -114,7 +114,7 @@ class NotesViewer {
             // Add note text at the end of the line
             fileNotes[lineNumber].forEach(note => {
                 let shouldAnnotate = false;
-                if (note.commit === currentCommit) {
+                if (currentCommit == null || note.commit === currentCommit) {
                     shouldAnnotate = true;
                 } else if (lineIndex < lastLineIndex) {
                     const line = document.lineAt(lineIndex);
