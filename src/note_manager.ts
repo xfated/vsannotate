@@ -60,11 +60,17 @@ class NoteManager {
    */
   async addNote(lineNumber: number, noteData: NoteData): Promise<void> {
     const lineNumberStr = String(lineNumber);
-    const currentCommit = await gitHelper.getCurrentCommit();
     // Get file path
-    const file_path = this.currentPath();
-    if (file_path === null) {
+    const filePath = this.currentPath();
+    if (filePath === null) {
       return;
+    }
+    // Check if the file_path is part of the workspace
+    let currentCommit = null
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const isInWorkspace = workspaceFolders?.some(folder => filePath.startsWith(folder.uri.fsPath));
+    if (isInWorkspace) {
+      currentCommit = await gitHelper.getCurrentCommit();
     }
 
     const fileNotes = this.fetchFileNotes();
