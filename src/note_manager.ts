@@ -315,6 +315,7 @@ class NoteManager {
         if (diffs[filePath] == null) { continue; }
 
         const movedLines = diffs[filePath]["movedLines"];
+
         const movedIndexes = movedLines[note.fileText];
         if (movedIndexes == null || movedIndexes.length === 0) { continue; }
         
@@ -333,7 +334,7 @@ class NoteManager {
     }
 
     // Save all notes
-    this.saveAllNotes(allNotes);
+    this.saveAllNotes(newNotes);
   }
 }
 
