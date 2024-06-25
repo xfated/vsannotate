@@ -5,8 +5,14 @@ import NoteManager from './note_manager';
 import { FileNotes, Note } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import gitHelper from './git_helper';
-import { text } from 'stream/consumers';
 
+const Decoration = {
+    FileHighlights: 'file_highlights',
+    FileTextDecorations: 'file_text_decorations',
+    FileMissingNotesDecorations: 'file_missing_notes_decorations',
+} as const
+// Convert object key in a type
+type DecorationTypes = typeof Decoration[keyof typeof Decoration]
 
 class NotesViewer {
     noteManager: NoteManager;
@@ -16,7 +22,8 @@ class NotesViewer {
     // Store a record of decorations so we can reuse existing ones
     fileHighlights: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>;
     fileTextDecorations: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>();;
-    notesMap: Map<string, Map<number, Note>> = new Map<string, Map<number, Note>>();
+    missingNotesDecorations: Map<string, vscode.TextEditorDecorationType> = new Map<string, vscode.TextEditorDecorationType>();;
+    notesMap: Map<string, Map<number, string>> = new Map<string, Map<number, string>>();
     
     constructor(noteManager: NoteManager) {
         this.noteManager = noteManager;
@@ -40,8 +47,40 @@ class NotesViewer {
 		}
 
         const currentCommit = await gitHelper.getCurrentCommit();
-        this.annotateLines(editor, document, fileNotes, currentCommit);
+        await this.annotateLines(editor, document, fileNotes, currentCommit);
 	}
+
+    /** Helper method to update decorations, so we don't stack decorations
+     * Fetch if exist, else return new
+    */
+    getDecoration(decorationType: DecorationTypes, fileName: string): vscode.TextEditorDecorationType {
+        switch (decorationType) {
+            case Decoration.FileHighlights: 
+                // Fetch if exists else create new
+                let fileHighlights = this.fileHighlights.get(fileName);
+                if (!fileHighlights) {
+                    fileHighlights = this.getHighlightDecorationType();
+                    this.fileHighlights.set(fileName, fileHighlights);
+                }
+                return fileHighlights;
+            case Decoration.FileTextDecorations:
+                let fileTextDecorations = this.fileTextDecorations.get(fileName);
+                if (!fileTextDecorations) {
+                    fileTextDecorations = this.getNoteDecorationType();
+                    this.fileTextDecorations.set(fileName, fileTextDecorations);
+                }
+                return fileTextDecorations;
+            case Decoration.FileMissingNotesDecorations:
+                let fileMissingNotesDecorations = this.missingNotesDecorations.get(fileName);
+                if (!fileMissingNotesDecorations) {
+                    fileMissingNotesDecorations = this.getMissingNoteDecorationType();
+                    this.missingNotesDecorations.set(fileName, fileMissingNotesDecorations);
+                }
+                return fileMissingNotesDecorations;
+            default: 
+                throw new Error(`[NotesViewer.getDecoration] Invalid decoration type: ${decorationType}`)
+        }        
+    } 
 
     /**
      * Annotates lines with notes in a given document.
@@ -53,27 +92,19 @@ class NotesViewer {
      * @param fileNotes - The notes to highlight in the document.
      * @param currentCommit - The current commit hash.
      */
-    annotateLines(editor: vscode.TextEditor, document: vscode.TextDocument, 
+    async annotateLines(editor: vscode.TextEditor, document: vscode.TextDocument, 
             fileNotes: FileNotes, currentCommit: string | null) {
-        // Fetch if exists else create new
-        let fileHighlights = this.fileHighlights.get(document.fileName);
-        if (!fileHighlights) {
-            fileHighlights = this.getHighlightDecorationType();
-            this.fileHighlights.set(document.fileName, fileHighlights);
-        }
-         // Fetch if exists else create new
-         let fileTextDecoration = this.fileTextDecorations.get(document.fileName);
-         if (!fileTextDecoration) {
-            fileTextDecoration = this.getNoteDecorationType();
-             this.fileTextDecorations.set(document.fileName, fileTextDecoration);
-         }
+        // Fetch decorations
+        const fileHighlights = this.getDecoration(Decoration.FileHighlights, document.fileName);
+        const fileTextDecoration = this.getDecoration(Decoration.FileTextDecorations, document.fileName);
+        const fileMissingNotesDecorations = this.getDecoration(Decoration.FileMissingNotesDecorations, document.fileName);
 
 		const decorations: vscode.DecorationOptions[] = [];
         const noteDecorations: vscode.DecorationOptions[] = [];
-        const documentNotes = new Map<number, Note>();
+        const documentNotes = new Map<number, string>();
         // Put missing notes at the bototm
         const missingNoteDecorations: vscode.DecorationOptions[] = [];
-        const missingNoteLines: string[] = [];
+        const missingNotes: Note[] = [];
 
         const lastLineIndex = document.lineCount;
 		Object.keys(fileNotes).forEach(lineNumber => {
@@ -85,7 +116,7 @@ class NotesViewer {
                 let shouldAnnotate = false;
                 if (note.commit === currentCommit) {
                     shouldAnnotate = true;
-                } else if (lineIndex <= lastLineIndex) {
+                } else if (lineIndex < lastLineIndex) {
                     const line = document.lineAt(lineIndex);
                     if (note.fileText === line.text) {
                         shouldAnnotate = true;
@@ -95,6 +126,7 @@ class NotesViewer {
                 if (shouldAnnotate) {
                     const line = document.lineAt(lineIndex);
                     const range = new vscode.Range(lineIndex, 0, lineIndex, line.text.length);
+                    // Highlight
                     decorations.push({ range });
                     // Add note text at the end of the line
                     const noteText = note.note;
@@ -108,41 +140,52 @@ class NotesViewer {
                     });
     
                     // Store note for hover
-                    documentNotes.set(lineIndex, note);
+                    documentNotes.set(lineIndex, `Note: ${noteText}`);
                 } else {
                     // Handle notes from different commits
-                    const missingNoteText = `Commit: ${note.commit} | Line: ${note.lineNumber} | Text: ${note.fileText} | Note: ${note.note} | View on GitHub`;
-                    missingNoteLines.push(missingNoteText);
+                    missingNotes.push(note);
                 }
             });
 		});
 
-        // Add missing notes at the bottom of the document
-        console.log(missingNoteLines)
-        if (missingNoteLines.length > 0) {
-            const lastLineIndex = document.lineCount;
-            const missingNotesText = missingNoteLines.join('\n');
-            const virtualRange = new vscode.Range(lastLineIndex, 0, lastLineIndex + missingNoteLines.length, 0);
+        // Add missing notes in a different style
+        if (missingNotes.length > 0) {
+            const repoUrl = await gitHelper.getGithubRepoUrl();
+            let githubUrl = '';
 
-            missingNoteDecorations.push({
-                range: virtualRange,
-                renderOptions: {
-                    after: {
-                        contentText: `\n\n--- Missing Notes ---\n${missingNotesText}`,
-                        color: 'rgba(255,0,0,0.8)', // Customize the color as needed
-                        margin: '2em 0 0 0',
-                        fontStyle: 'italic'
-                    }
+            for (const note of missingNotes) {
+                // If lineNumber exceeds, ignore
+                if (note.lineNumber >= document.lineCount) { continue; }
+                if (repoUrl !== null) {
+                    githubUrl = gitHelper.getGithubFileCommitUrl(
+                                    repoUrl,
+                                    note.commit!, 
+                                    vscode.workspace.asRelativePath(document.fileName),
+                                    note.lineNumber);
                 }
-            });
+                const line = document.lineAt(note.lineNumber);
+                const range = new vscode.Range(note.lineNumber, 0, note.lineNumber, line.text.length);
+                const noteText = `${note.note} (commit: ${note.commit}, line: ${note.lineNumber})`
+
+                decorations.push({ range }) 
+                missingNoteDecorations.push({
+                    range,
+                    renderOptions: {
+                        after: {
+                            contentText: ` // ${noteText}`,
+                        }
+                    }
+                });
+                documentNotes.set(note.lineNumber, `${note.note}  [View on GitHub](${githubUrl})`)
+            }
         }
+        
         // Set highights
         editor.setDecorations(fileHighlights, decorations);
         // Set text decoration (text at end of line)
         editor.setDecorations(fileTextDecoration, noteDecorations);
-
         // Set decorations for missing notes
-        editor.setDecorations(this.getMissingNoteDecorationType(), missingNoteDecorations);
+        editor.setDecorations(fileMissingNotesDecorations, missingNoteDecorations);
 
         // Add notes for hover
         this.notesMap.set(document.fileName, documentNotes);
@@ -154,7 +197,7 @@ class NotesViewer {
      *
      * @returns A TextEditorDecorationType for highlighting lines.
      */
-    getHighlightDecorationType(): vscode.TextEditorDecorationType{
+    getHighlightDecorationType(): vscode.TextEditorDecorationType {
         return vscode.window.createTextEditorDecorationType({
 			backgroundColor: this.HIGHLIGHT_COLOR // Highlight with a yellow background
 		});
@@ -175,12 +218,11 @@ class NotesViewer {
         });
     }
 
-
     getMissingNoteDecorationType(): vscode.TextEditorDecorationType {
         return vscode.window.createTextEditorDecorationType({
             after: {
-                margin: '0 0 0 2em',
-                color: 'rgba(255,0,0,0.8)', // Customize the color as needed
+                margin: '0 0 0 1em',
+                color: 'rgba(200,0,0,0.8)', // Customize the color as needed
                 fontStyle: 'italic'
             }
         });

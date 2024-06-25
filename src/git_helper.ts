@@ -40,15 +40,9 @@ class GitHelper {
    * @returns The current commit hash or an error message if it cannot be retrieved.
    */
   async getCurrentCommit(): Promise<string | null> {
-    
     try {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showErrorMessage('No workspace folder found.');
-            return null;
-        }
-
-        const workspacePath = workspaceFolders[0].uri.fsPath;
+        const workspacePath = this.getWorkspacePath()
+        if (workspacePath === null ) { return null }
 
         // Execute the git command to get the current commit hash
         const { stdout } = await execPromise('git rev-parse HEAD', { cwd: workspacePath });
@@ -61,6 +55,35 @@ class GitHelper {
         return null;
     }
   }
+  
+  async getGithubRepoUrl() {
+    const workspacePath = this.getWorkspacePath();
+    if (workspacePath === null ) { return null }
+
+    // Replace with your actual repo URL pattern
+    const { stdout: originUrl } = await execPromise('git config --get remote.origin.url', { cwd: workspacePath });
+    let repoUrl = originUrl.trim().replace(/\.git$/, '');
+
+    // Ensure the URL is in HTTPS format
+    if (repoUrl.startsWith('git@')) {
+        repoUrl = repoUrl.replace(':', '/').replace('git@', 'https://');
+    } else if (repoUrl.startsWith('http://')) {
+        repoUrl = repoUrl.replace('http://', 'https://');
+    }
+    return repoUrl;
+  }
+  
+  /**
+   * Generates a GitHub URL for a specific file at a specific commit and line number.
+   * 
+   * @param {string} commit - The commit hash.
+   * @param {string} fileName - The relative file path within the repository.
+   * @param {number} lineNumber - The line number in the file.
+   * @returns {Promise<string | null>} A promise that resolves to the GitHub URL or null if the workspace path is not found.
+   */
+  getGithubFileCommitUrl(repoUrl: string, commit: string, fileName: string, lineNumber: number): string {
+    return `${repoUrl}/blob/${commit}/${fileName}#L${lineNumber}`;
+  };
 
   /**
    * Checks if the current commit has changed since the last check.
@@ -105,7 +128,8 @@ class GitHelper {
         return null;
     }
     return workspaceFolders[0].uri.fsPath;
-}
+  }
+
 
   /**
    * Parses the given diff string and returns an object containing added, removed, and moved lines.

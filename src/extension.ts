@@ -104,9 +104,9 @@ export function activate(context: vscode.ExtensionContext) {
         provideHover(document, position, token) {
           const documentNotes = notesViewer.notesMap.get(document.fileName);
           if (documentNotes) {
-            const note = documentNotes.get(position.line);
-            if (note) {
-              return new vscode.Hover(`Note: ${note.note}`);
+            const noteText = documentNotes.get(position.line);
+            if (noteText) {
+              return new vscode.Hover(noteText);
             }
           }
           return null;
