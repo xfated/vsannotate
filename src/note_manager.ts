@@ -291,6 +291,11 @@ class NoteManager {
     return hasChange;
   }
 
+  /**
+   * Handles changes in Git commits and updates the notes accordingly.
+   * This method processes each Git change, compares diffs between commits,
+   * and updates the notes if their associated lines have changed.
+   */
   async handleGitChange(): Promise<void> {
     const commitDiffs: CommitDiffs  = {};
     /** Handle each git change separately */
