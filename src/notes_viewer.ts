@@ -114,7 +114,8 @@ class NotesViewer {
             // Add note text at the end of the line
             fileNotes[lineNumber].forEach(note => {
                 let shouldAnnotate = false;
-                if (currentCommit != null && note.commit === currentCommit) {
+                if (currentCommit == null || note.commit == null || note.commit === currentCommit) {
+                    // annotate if in same commit, or we're not in any commit
                     shouldAnnotate = true;
                 } else if (lineIndex < lastLineIndex) {
                     const line = document.lineAt(lineIndex);
@@ -237,8 +238,8 @@ class NotesViewer {
      * @param isPreview - A boolean indicating whether to open the file in preview mode.
      */
     async generateNotesReadme(context: vscode.ExtensionContext, isPreview = true) {
-        const readmeContent = this.generateReadmeContent(context);
-        const readmeUri = vscode.Uri.parse(`untitled:README_${uuidv4()}.md`);
+        const readmeContent = await this.generateReadmeContent();
+        const readmeUri = vscode.Uri.parse(`untitled:ANNOTATIONS_${uuidv4()}.md`);
         if (readmeUri == null) { return; }
 
         try {
@@ -258,27 +259,45 @@ class NotesViewer {
         }
     }
 
+    formatFilePathLink(filePath: string) {
+        return encodeURI(filePath.replace(/\\/g, '/')); 
+    }
+
     /**
      * Generates Markdown content for notes and displays them in a README.md file.
      * The notes are grouped by filename in alphabetical order, with each group sorted by updatedAt in descending order.
      * 
      * @param context - The extension context to access the workspace state.
      */
-    generateReadmeContent(context: vscode.ExtensionContext): string[] {
+    async generateReadmeContent(): Promise<string[]> {
+        const currentCommit = await gitHelper.getCurrentCommit();
+        const repoUrl = await gitHelper.getGithubRepoUrl();
+        
         // Iterate over all files and collect notes using NoteManager
         const allNotes = this.noteManager.getAllNotes();
         const allNotesList: { [fileName: string]: Note[] } = {};
+        const missingNotesList: { [fileName: string]: Note[] } = {};
 
         for (const filePath of Object.keys(allNotes)) {
             const fileNotes: FileNotes = allNotes[filePath];
             const fileNotesList: Note[] = [];
+            const fileMissingNotesList: Note[] = [];
 
             Object.values(fileNotes).forEach(notes => {
-                fileNotesList.push(...notes);
+                notes.forEach(note => {
+                    if (currentCommit && note.commit !== currentCommit) {
+                        fileMissingNotesList.push(note);
+                    } else {
+                        fileNotesList.push(note);
+                    }
+                });
             });
 
             if (fileNotesList.length > 0) {
                 allNotesList[filePath] = fileNotesList;
+            }
+            if (fileMissingNotesList.length > 0) {
+                missingNotesList[filePath] = fileMissingNotesList;
             }
         }
         
@@ -292,19 +311,45 @@ class NotesViewer {
 
         for (const filePath of sortedFileNames) {
             const notes = allNotesList[filePath];
-
+            const formattedFilePath = this.formatFilePathLink(filePath)
             // Sort notes by updatedAt in descending order
             notes.sort((a, b) => b.updatedAt - a.updatedAt);
 
             // Add file title with link to open the file
-            markdownLines.push(`## [${filePath}](vscode://file/${filePath})`);
+            markdownLines.push(`## [${vscode.workspace.asRelativePath(filePath)}](vscode://file/${formattedFilePath})`);
 
             // Add notes for the file
             notes.forEach(note => {
                 const noteContent = note.note.replace(/\n/g, ' ');
                 const lineNumber = note.lineNumber + 1;
-                markdownLines.push(`- [Line ${lineNumber}](vscode://file/${filePath}:${lineNumber}): ${noteContent}`);
+                markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${noteContent}`);
             });
+            
+            // Add missing notes for the file, if any
+            if (missingNotesList[filePath]) {
+                markdownLines.push('');
+                markdownLines.push('### Missing Notes');
+                markdownLines.push('');
+
+                const missingNotes = missingNotesList[filePath];
+                missingNotes.sort((a, b) => a.lineNumber - b.lineNumber);
+
+                missingNotes.forEach(note => {
+                    const noteContent = note.note.replace(/\n/g, ' ');
+                    const lineNumber = note.lineNumber + 1;
+                    let viewOnGithubString = ''
+                    if (repoUrl) {
+                        const githubUrl = gitHelper.getGithubFileCommitUrl(
+                                            repoUrl,
+                                            note.commit!, 
+                                            vscode.workspace.asRelativePath(filePath),
+                                            note.lineNumber);
+                        viewOnGithubString = githubUrl.length > 0 ? `[View on GitHub](${githubUrl})` : '';
+                    }
+                    markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${noteContent} ${viewOnGithubString}`);
+                });
+            }
+            
             markdownLines.push('');
         }
         return markdownLines;
