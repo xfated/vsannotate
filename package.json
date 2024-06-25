@@ -40,6 +40,11 @@
           "command": "vsannotate.addAnnotation",
           "group": "z_commands",
           "when": "true" 
+        },
+        {
+          "command": "vsannotate.debug",
+          "group": "z_commands",
+          "when": "false"
         }
       ],
       "editor/context": [
