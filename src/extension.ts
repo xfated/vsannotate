@@ -5,6 +5,7 @@ import getNoteManager from "./version";
 import { getLineData } from "./helper";
 import NotesViewer from "./notes_viewer";
 import gitHelper from "./git_helper";
+import { taskQueue } from "./taskqueue";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -13,10 +14,10 @@ export function activate(context: vscode.ExtensionContext) {
   const notesViewer = new NotesViewer(noteManager);
 
   // Reset state (For Debugging)
-  // const keys = context.workspaceState.keys();
-  // for (const key of keys) {
-  //   context.workspaceState.update(key, undefined);
-  // }
+  const keys = context.workspaceState.keys();
+  for (const key of keys) {
+    context.workspaceState.update(key, undefined);
+  }
 
   context.subscriptions.push(
     vscode.commands.registerCommand("vsannotate.addAnnotation", async () => {
@@ -47,13 +48,16 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Event listener for text document changes
   context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument(async (event) => {
-      let hasAdjustments = await noteManager.handleDocumentChange(event);
+    vscode.workspace.onDidChangeTextDocument((event) => {
+      // Use a queue to ensure changes are made in order
+      taskQueue.addTask(async () => {
+        let hasAdjustments = await noteManager.handleDocumentChange(event);
 
-      // Reapply decorations
-      if (hasAdjustments) {
-        notesViewer.addLinesUI(event.document);
-      }
+        // Reapply decorations
+        if (hasAdjustments) {
+          notesViewer.addLinesUI(event.document);
+        }
+      })
     })
   );
 

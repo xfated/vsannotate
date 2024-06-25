@@ -240,14 +240,12 @@ class NoteManager {
           ) {
             return;
           }
-          // If note is already correct, don't move
-          if (document.lineAt(note.lineNumber).text === note.fileText) {
+          // If note is already correct, don't move. 
+          // in case handleGitChange runs before this, note.commit will be same as currentCommit
+          if (note.lineNumber < document.lineCount &&
+            document.lineAt(note.lineNumber).text === note.fileText) {
             return;
           }
-          // // In case change already handled by git
-          // if (document.lineAt(note.lineNumber).text === note.fileText) {
-          //   return;
-          // }
           let newLineNumber = note.lineNumber;
           if (newLineNumber > endLine) {
             // Move down if change before note
