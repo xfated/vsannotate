@@ -10,9 +10,9 @@ const Decoration = {
     FileHighlights: 'file_highlights',
     FileTextDecorations: 'file_text_decorations',
     FileMissingNotesDecorations: 'file_missing_notes_decorations',
-} as const
+} as const;
 // Convert object key in a type
-type DecorationTypes = typeof Decoration[keyof typeof Decoration]
+type DecorationTypes = typeof Decoration[keyof typeof Decoration];
 
 class NotesViewer {
     noteManager: NoteManager;
@@ -78,7 +78,7 @@ class NotesViewer {
                 }
                 return fileMissingNotesDecorations;
             default: 
-                throw new Error(`[NotesViewer.getDecoration] Invalid decoration type: ${decorationType}`)
+                throw new Error(`[NotesViewer.getDecoration] Invalid decoration type: ${decorationType}`);
         }        
     } 
 
@@ -165,9 +165,9 @@ class NotesViewer {
                 }
                 const line = document.lineAt(note.lineNumber);
                 const range = new vscode.Range(note.lineNumber, 0, note.lineNumber, line.text.length);
-                const noteText = `${note.note} (commit: ${note.commit}, line: ${note.lineNumber})`
+                const noteText = `${note.note} (commit: ${note.commit}, line: ${note.lineNumber})`;
 
-                decorations.push({ range }) 
+                decorations.push({ range }); 
                 missingNoteDecorations.push({
                     range,
                     renderOptions: {
@@ -176,7 +176,8 @@ class NotesViewer {
                         }
                     }
                 });
-                documentNotes.set(note.lineNumber, `${note.note}  [View on GitHub](${githubUrl})`)
+                const viewOnGithubString = githubUrl.length > 0 ? ` [View on GitHub](${githubUrl})` : '';
+                documentNotes.set(note.lineNumber, `${note.note}${viewOnGithubString}`);
             }
         }
         
