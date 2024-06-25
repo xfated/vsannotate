@@ -27,8 +27,6 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      vscode.window.showInformationMessage(`${noteText}`);
-
       if (noteText.length > 0) {
         await noteManager.addNote(lineData.line.lineNumber, {
           fileText: lineData.text,
@@ -39,10 +37,6 @@ export function activate(context: vscode.ExtensionContext) {
       }
       // Update UI
       notesViewer.addLinesUI(vscode.window.activeTextEditor?.document);
-
-      vscode.window.showInformationMessage(
-        `${noteManager.getNotesPrettyString()}`
-      );
     })
   );
 
