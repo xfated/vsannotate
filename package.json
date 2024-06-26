@@ -2,7 +2,7 @@
   "name": "vsannotate",
   "displayName": "VsAnnotate",
   "description": "Write personal notes on code snippets",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "publisher": "xfated",
   "engines": {
     "vscode": "^1.89.0"
@@ -11,8 +11,12 @@
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "onStartupFinished"
   ],
+  "repository": {
+		"type": "git",
+		"url": "https://github.com/xfated/vsannotate.git"
+	},
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
