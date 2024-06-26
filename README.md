@@ -1,7 +1,5 @@
 # VsAnnotate
 
-![VsAnnotate](https://img.shields.io/badge/version-1.0.0-blue.svg) ![VsAnnotate](https://img.shields.io/badge/publisher-xfated-orange.svg)
-
 Write personal notes for code snippets in VS Code.
 
 ## Features
@@ -13,12 +11,12 @@ Write personal notes for code snippets in VS Code.
 
 ### Addding a note
 
-<img src="https://github.com/xfated/vsannotate/blob/main/assets/AddNoteExample.gif" />
+<img src="https://raw.githubusercontent.com/xfated/vsannotate/main/assets/AddNoteExample.gif" />
 
 
 ### Generating summary of notes
 
-<img src="https://github.com/xfated/vsannotate/blob/main/assets/GetSummaryExample.gif" />
+<img src="https://raw.githubusercontent.com/xfated/vsannotate/main/assets/GetSummaryExample.gif" />
 
 ## Commands
 
