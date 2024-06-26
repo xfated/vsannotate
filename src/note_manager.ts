@@ -282,9 +282,6 @@ class NoteManager {
 
     // Save the updated notes
     if (hasChange) {
-      vscode.window.showInformationMessage(
-        `Changed ${JSON.stringify(updatedNotes)}`
-      );
       this.updateFileNotes(updatedNotes);
     }
 
