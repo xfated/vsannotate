@@ -1,77 +1,73 @@
-# vsannotate README
+# VsAnnotate
 
-This is the README for your extension "vsannotate". After writing up a brief description, we recommend including the following sections.
+![VsAnnotate](https://img.shields.io/badge/version-1.0.0-blue.svg) ![VsAnnotate](https://img.shields.io/badge/publisher-xfated-orange.svg)
 
-## Getting started with development
-1. Go to `src/extension.ts`
-2. Run `Debug: Start Debugging...` from the Command Palette (Cmd + Shift + P)
-3. Use `Reload Window` from Command Palette to refresh changes
-
+Write personal notes for code snippets in VS Code.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Annotate lines of code with notes.
+- Automatically update notes based on Git changes.
+- View a summary of all notes in a Markdown file.
+- Hover over lines to see notes.
 
-For example if there is an image subfolder under your extension project workspace:
+### Addding a note
 
-\!\[feature X\]\(images/feature-x.png\)
+<video src="assets/AddNoteExample.mov" controls>
+    Your browser does not support the video tag.
+</video>
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+### Generating summary of notes
+<video src="assets/GetSummaryExample.mov" controls>
+    Your browser does not support the video tag.
+</video>
 
-## Requirements
+## Commands
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- **Annotate** (`vsannotate.addAnnotation`): Add a note to the current line.
+- **VsAnnotate: Show All Notes** (`vsannotate.generateReadme`): Generate a summary of all notes in a README.md file.
 
-## Extension Settings
+## Keybindings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+- **Annotate**: `Ctrl+Alt+A` on Windows/Linux and `Cmd+Shift+A` on macOS.
 
-For example:
+## Installation
 
-This extension contributes the following settings:
+1. Open the Extensions view (`Ctrl+Shift+X`).
+2. Search for `VsAnnotate`.
+3. Click **Install**.
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## Usage
 
-## Known Issues
+### Adding a Note
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+1. Place your cursor on the line you want to annotate.
+2. Press `Cmd+Shift+A` on macOS or `Ctrl+Alt+A` on Windows/Linux.
+3. Enter your note in the input box and press `Enter`.
 
-## Release Notes
+### Viewing All Notes
 
-Users appreciate release notes as you update your extension.
+1. Open the Command Palette (`Ctrl+Shift+P`).
+2. Search for `VsAnnotate: Show All Notes`.
+3. A summary of all notes will be generated in a .md file.
+
+## Extension Commands and Configuration
+
+### Commands
+
+- **Annotate**: Use `Cmd+Shift+A` on macOS or `Ctrl+Alt+A` on Windows/Linux to add a note to the current line.
+- **Generate README**: Use the `VsAnnotate: Show All Notes` command to generate a summary of all notes.
+
+## Release notes
 
 ### 1.0.0
 
-Initial release of ...
+Initial release of VsAnnotate
 
-### 1.0.1
+## Contributing
 
-Fixed issue #.
+Contributions are welcome! Please open an issue or submit a pull request.
 
-### 1.1.0
+## License
 
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+This project is licensed under the MIT License.

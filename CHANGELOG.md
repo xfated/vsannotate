@@ -4,6 +4,8 @@ All notable changes to the "vsannotate" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [1.0.0] - 2024-06-26
 
-- Initial release
+- Initial release of extension
+- Allows add/update/delete of note, and generating summary of note.
+- Notes are in simple text

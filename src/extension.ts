@@ -128,5 +128,3 @@ export function activate(context: vscode.ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
-
-// TODO: update NoteViewer to handle old notes. E.g. Need text to match to show. (show at bottom with text and commit)
