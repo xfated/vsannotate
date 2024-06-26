@@ -56,21 +56,27 @@ class GitHelper {
     }
   }
   
-  async getGithubRepoUrl() {
-    const workspacePath = this.getWorkspacePath();
-    if (workspacePath === null ) { return null }
+  async getGithubRepoUrl(): Promise<string | null> {
+    try {
+      const workspacePath = this.getWorkspacePath();
+      if (workspacePath === null ) { return null }
 
-    // Replace with your actual repo URL pattern
-    const { stdout: originUrl } = await execPromise('git config --get remote.origin.url', { cwd: workspacePath });
-    let repoUrl = originUrl.trim().replace(/\.git$/, '');
+      // Replace with your actual repo URL pattern
+      const { stdout: originUrl } = await execPromise('git config --get remote.origin.url', { cwd: workspacePath });
+      let repoUrl = originUrl.trim().replace(/\.git$/, '');
 
-    // Ensure the URL is in HTTPS format
-    if (repoUrl.startsWith('git@')) {
-        repoUrl = repoUrl.replace(':', '/').replace('git@', 'https://');
-    } else if (repoUrl.startsWith('http://')) {
-        repoUrl = repoUrl.replace('http://', 'https://');
-    }
-    return repoUrl;
+      // Ensure the URL is in HTTPS format
+      if (repoUrl.startsWith('git@')) {
+          repoUrl = repoUrl.replace(':', '/').replace('git@', 'https://');
+      } else if (repoUrl.startsWith('http://')) {
+          repoUrl = repoUrl.replace('http://', 'https://');
+      }
+      return repoUrl;
+    } catch (err) {
+      const error = err as Error
+      console.error(`Failed to get github repo url: ${error.message}`);
+      return null;
+  }
   }
   
   /**

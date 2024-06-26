@@ -13,14 +13,12 @@ Write personal notes for code snippets in VS Code.
 
 ### Addding a note
 
-<video src="assets/AddNoteExample.mov" controls>
-    Your browser does not support the video tag.
-</video>
+<img src="https://github.com/xfated/vsannotate/blob/main/assets/AddNoteExample.gif" />
+
 
 ### Generating summary of notes
-<video src="assets/GetSummaryExample.mov" controls>
-    Your browser does not support the video tag.
-</video>
+
+<img src="https://github.com/xfated/vsannotate/blob/main/assets/GetSummaryExample.gif" />
 
 ## Commands
 
