@@ -177,7 +177,7 @@ class NotesViewer {
                         }
                     }
                 });
-                const viewOnGithubString = githubUrl.length > 0 ? ` [View on GitHub](${githubUrl})` : '';
+                const viewOnGithubString = githubUrl.length > 0 ? ` [[View on Remote]](${githubUrl})` : '';
                 documentNotes.set(note.lineNumber, `${note.note}${viewOnGithubString}`);
             }
         }
@@ -322,7 +322,16 @@ class NotesViewer {
             notes.forEach(note => {
                 const noteContent = note.note.replace(/\n/g, ' ');
                 const lineNumber = note.lineNumber + 1;
-                markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${noteContent}`);
+                let viewOnGithubString = '';
+                if (repoUrl) {
+                    const githubUrl = gitHelper.getGithubFileCommitUrl(
+                                        repoUrl,
+                                        note.commit!, 
+                                        vscode.workspace.asRelativePath(filePath),
+                                        note.lineNumber);
+                    viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
+                }
+                markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${noteContent} ${viewOnGithubString}`);
             });
             
             // Add missing notes for the file, if any
@@ -344,7 +353,7 @@ class NotesViewer {
                                             note.commit!, 
                                             vscode.workspace.asRelativePath(filePath),
                                             note.lineNumber);
-                        viewOnGithubString = githubUrl.length > 0 ? `[View on GitHub](${githubUrl})` : '';
+                        viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
                     }
                     markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${noteContent} ${viewOnGithubString}`);
                 });
