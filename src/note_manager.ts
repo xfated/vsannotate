@@ -66,7 +66,7 @@ class NoteManager {
       return;
     }
     // Check if the file_path is part of the workspace
-    let currentCommit = null
+    let currentCommit = null;
     const workspaceFolders = vscode.workspace.workspaceFolders;
     const isInWorkspace = workspaceFolders?.some(folder => filePath.startsWith(folder.uri.fsPath));
     if (isInWorkspace) {
@@ -319,25 +319,39 @@ class NoteManager {
         
         const diffs: FileDiffs = commitDiffs[note.commit];
 
-        // If file not in diff, ignore
-        if (diffs[filePath] == null) { continue; }
+        // If file not in diff, just update
+        if (diffs[filePath] == null) { 
+          // move note to new commit
+          note.commit = currentCommit;
+          newNotes[filePath][note.lineNumber] = [note];
+          continue; 
+        }
 
         const movedLines = diffs[filePath]["movedLines"];
-
         const movedIndexes = movedLines[note.fileText];
-        if (movedIndexes == null || movedIndexes.length === 0) { continue; }
+        if (movedIndexes != null && movedIndexes.length > 0) { 
+          // Update index if text is found in movedLines.
+          const index = movedIndexes.findIndex(indexes => indexes[0] === note.lineNumber); 
+          if (index !== -1) { 
+            // If is moved remove from diffs, and update note
+            const [[oldLine, newLine]] = movedIndexes.splice(index, 1);
+            note.lineNumber = newLine;
+            note.commit = currentCommit;
+            // Update new hash
+            delete newNotes[filePath][lineNumber];
+            newNotes[filePath][newLine] = [note];
+            continue; 
+          }
+        }
         
-        // Update index if text is found in movedLines.
-        const index = movedIndexes.findIndex(indexes => indexes[0] === note.lineNumber); 
-        if (index === -1) { continue; }
-
-        // Remove from diffs, and update note
-        const [[oldLine, newLine]] = movedIndexes.splice(index, 1);
-        note.lineNumber = newLine;
-        note.commit = currentCommit;
-        // Update new hash
-        delete newNotes[filePath][lineNumber];
-        newNotes[filePath][newLine] = [note];
+        // Check if the note is not removed
+        const removedLines = diffs[filePath]["removedLines"];
+        const isRemoved = (removedLines[note.fileText] ?? []).includes(note.lineNumber);
+        if (!isRemoved) {
+          // move note to new commit
+          note.commit = currentCommit;
+          newNotes[filePath][note.lineNumber] = [note];
+        }
       }
     }
 
