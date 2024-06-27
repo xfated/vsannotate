@@ -302,37 +302,40 @@ class NotesViewer {
         }
         
         // Sort file names in alphabetical order
-        const sortedFileNames = Object.keys(allNotesList).sort();
-
+        const allFileNames = new Set([...Object.keys(allNotesList), ...Object.keys(missingNotesList)])
+        const sortedFileNames = Array.from(allFileNames).sort();
+ 
         // Generate Markdown content
         const markdownLines: string[] = [];
         markdownLines.push('# Notes');
         markdownLines.push('');
 
         for (const filePath of sortedFileNames) {
-            const notes = allNotesList[filePath];
             const formattedFilePath = this.formatFilePathLink(filePath)
-            // Sort notes by updatedAt in descending order
-            notes.sort((a, b) => b.updatedAt - a.updatedAt);
-
             // Add file title with link to open the file
             markdownLines.push(`## [${vscode.workspace.asRelativePath(filePath)}](vscode://file/${formattedFilePath})`);
+            
+            if (allNotesList[filePath]) {
+                // Sort notes by updatedAt in descending order
+                const notes = allNotesList[filePath];
+                notes.sort((a, b) => b.updatedAt - a.updatedAt);
 
-            // Add notes for the file
-            notes.forEach(note => {
-                const noteContent = note.note.replace(/\n/g, ' ');
-                const lineNumber = note.lineNumber + 1;
-                let viewOnGithubString = '';
-                if (repoUrl) {
-                    const githubUrl = gitHelper.getGithubFileCommitUrl(
-                                        repoUrl,
-                                        note.commit!, 
-                                        vscode.workspace.asRelativePath(filePath),
-                                        note.lineNumber);
-                    viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
-                }
-                markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${noteContent} ${viewOnGithubString}`);
-            });
+                // Add notes for the file
+                notes.forEach(note => {
+                    const noteContent = note.note.replace(/\n/g, ' ');
+                    const lineNumber = note.lineNumber + 1;
+                    let viewOnGithubString = '';
+                    if (repoUrl && note.commit != null) {
+                        const githubUrl = gitHelper.getGithubFileCommitUrl(
+                                            repoUrl,
+                                            note.commit!, 
+                                            vscode.workspace.asRelativePath(filePath),
+                                            note.lineNumber);
+                        viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
+                    }
+                    markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${noteContent} ${viewOnGithubString}`);
+                });
+            }
             
             // Add missing notes for the file, if any
             if (missingNotesList[filePath]) {
@@ -347,7 +350,7 @@ class NotesViewer {
                     const noteContent = note.note.replace(/\n/g, ' ');
                     const lineNumber = note.lineNumber + 1;
                     let viewOnGithubString = ''
-                    if (repoUrl) {
+                    if (repoUrl && note.commit != null) {
                         const githubUrl = gitHelper.getGithubFileCommitUrl(
                                             repoUrl,
                                             note.commit!, 
