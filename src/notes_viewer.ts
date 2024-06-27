@@ -224,7 +224,7 @@ class NotesViewer {
         return vscode.window.createTextEditorDecorationType({
             after: {
                 margin: '0 0 0 1em',
-                color: 'rgba(200,0,0,0.8)', // Customize the color as needed
+                color: '#FFB6C1', // Customize the color as needed
                 fontStyle: 'italic'
             }
         });
