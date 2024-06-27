@@ -2,7 +2,7 @@
   "name": "vsannotate",
   "displayName": "VsAnnotate",
   "description": "Write personal notes on code snippets",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "xfated",
   "engines": {
     "vscode": "^1.89.0"
@@ -83,7 +83,9 @@
     "pretest": "yarn run compile-tests && yarn run compile && yarn run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src --ext ts",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "build": "vsce package",
+    "deploy": "vsce publish"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin-js": "^2.1.0",
