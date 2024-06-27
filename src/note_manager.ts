@@ -253,11 +253,11 @@ class NoteManager {
             return;
           }
           let newLineNumber = note.lineNumber;
-          if (newLineNumber > endLine) {
+          if (newLineNumber >= endLine) {
             // Move down if change before note
             hasChange = true;
             newLineNumber += lineDelta;
-          } else if (newLineNumber >= startLine && newLineNumber <= endLine) {
+          } else if (newLineNumber >= startLine && newLineNumber < endLine) {
             // For git related multi line changes, the change includes all text from first to last line
             // So we only search within the changed lines
             // Only reaches here if there was a multi line paste on the target line
