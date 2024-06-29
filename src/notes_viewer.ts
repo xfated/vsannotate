@@ -322,7 +322,7 @@ class NotesViewer {
 
                 // Add notes for the file
                 notes.forEach(note => {
-                    const noteContent = note.note.replace(/\n/g, ' ');
+                    const noteContent = `<span style="color: #FFB6C1;">// ${note.note.replace(/\n/g, ' ')}</span>`
                     const lineNumber = note.lineNumber + 1;
                     let viewOnGithubString = '';
                     if (repoUrl && note.commit != null) {
@@ -333,7 +333,7 @@ class NotesViewer {
                                             note.lineNumber);
                         viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
                     }
-                    markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${noteContent} ${viewOnGithubString}`);
+                    markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${note.fileText} ${noteContent} ${viewOnGithubString}`);
                 });
             }
             
@@ -347,7 +347,7 @@ class NotesViewer {
                 missingNotes.sort((a, b) => a.lineNumber - b.lineNumber);
 
                 missingNotes.forEach(note => {
-                    const noteContent = note.note.replace(/\n/g, ' ');
+                    const noteContent = `<span style="color: #FFB6C1;">// ${note.note.replace(/\n/g, ' ')}</span>`
                     const lineNumber = note.lineNumber + 1;
                     let viewOnGithubString = ''
                     if (repoUrl && note.commit != null) {
@@ -358,7 +358,7 @@ class NotesViewer {
                                             note.lineNumber);
                         viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
                     }
-                    markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${noteContent} ${viewOnGithubString}`);
+                    markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${note.fileText} ${noteContent} ${viewOnGithubString}`);
                 });
             }
             
