@@ -30,7 +30,7 @@ class NoteManager {
   currentPath(): string | null {
     const path = vscode.window.activeTextEditor?.document.fileName;
     if (path == null) {
-      vscode.window.showErrorMessage("Unable to get file path");
+      // vscode.window.showErrorMessage("Unable to get file path");
       return null;
     }
     return path;
@@ -148,7 +148,7 @@ class NoteManager {
     // Get file path
     const filePath = params?.inputFilePath || this.currentPath();
     if (filePath === null) {
-      throw new Error("File path not found");
+      return {}
     }
     const versionedFileNotes = this.context.workspaceState.get(
       filePath

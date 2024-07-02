@@ -5,6 +5,7 @@ import NoteManager from './note_manager';
 import { FileNotes, Note } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import gitHelper from './git_helper';
+import * as path from 'path';
 
 const Decoration = {
     FileHighlights: 'file_highlights',
@@ -39,7 +40,7 @@ class NotesViewer {
 	async addLinesUI(document?: vscode.TextDocument) {
 		if (document == null) { return; };
 
-		const fileNotes = this.noteManager.fetchFileNotes();
+        const fileNotes = this.noteManager.fetchFileNotes();
 		const editor = vscode.window.visibleTextEditors.find(e => e.document === document);
 
 		if (!editor) {
@@ -310,20 +311,103 @@ class NotesViewer {
         markdownLines.push('# Notes');
         markdownLines.push('');
 
-        for (const filePath of sortedFileNames) {
-            const formattedFilePath = this.formatFilePathLink(filePath)
-            // Add file title with link to open the file
-            markdownLines.push(`## [${vscode.workspace.asRelativePath(filePath)}](vscode://file/${formattedFilePath})`);
-            
-            if (allNotesList[filePath]) {
-                // Sort notes by updatedAt in descending order
-                const notes = allNotesList[filePath];
-                notes.sort((a, b) => b.updatedAt - a.updatedAt);
+        // Generate tree structure
+        const tree: { [key: string]: any } = {};
 
-                // Add notes for the file
-                notes.forEach(note => {
-                    const noteContent = `<span style="color: #FFB6C1;">// ${note.note.replace(/\n/g, ' ')}</span>`
+        for (const filePath of sortedFileNames) {
+            const relativePath = vscode.workspace.asRelativePath(filePath)
+            const parts = relativePath.split(path.sep);
+            let current = tree;
+            for (let i = 0; i < parts.length; i++) {
+                if (!current[parts[i]]) {
+                    current[parts[i]] = {};
+                }
+                current = current[parts[i]];
+            }
+            current.__file_path = filePath
+            current.__notes = allNotesList[filePath] || [];
+            current.__missingNotes = missingNotesList[filePath] || [];
+        }
+        this.generateMarkdownForTree(markdownLines, repoUrl, tree, 0);
+        
+        // for (const filePath of sortedFileNames) {
+        //     const formattedFilePath = this.formatFilePathLink(filePath)
+        //     // Add file title with link to open the file
+        //     markdownLines.push(`## [${vscode.workspace.asRelativePath(filePath)}](vscode://file/${formattedFilePath})`);
+            
+        //     if (allNotesList[filePath]) {
+        //         // Sort notes by updatedAt in descending order
+        //         const notes = allNotesList[filePath];
+        //         notes.sort((a, b) => b.updatedAt - a.updatedAt);
+
+        //         // Add notes for the file
+        //         notes.forEach(note => {
+        //             const noteContent = `<span style="color: #FFB6C1;">// ${note.note.replace(/\n/g, ' ')}</span>`
+        //             const lineNumber = note.lineNumber + 1;
+        //             let viewOnGithubString = '';
+        //             if (repoUrl && note.commit != null) {
+        //                 const githubUrl = gitHelper.getGithubFileCommitUrl(
+        //                                     repoUrl,
+        //                                     note.commit!, 
+        //                                     vscode.workspace.asRelativePath(filePath),
+        //                                     note.lineNumber);
+        //                 viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
+        //             }
+        //             markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${note.fileText} ${noteContent} ${viewOnGithubString}`);
+        //         });
+        //     }
+            
+        //     // Add missing notes for the file, if any
+        //     if (missingNotesList[filePath]) {
+        //         markdownLines.push('');
+        //         markdownLines.push('### Missing Notes');
+        //         markdownLines.push('');
+
+        //         const missingNotes = missingNotesList[filePath];
+        //         missingNotes.sort((a, b) => a.lineNumber - b.lineNumber);
+
+        //         missingNotes.forEach(note => {
+        //             const noteContent = `<span style="color: #FFB6C1;">// ${note.note.replace(/\n/g, ' ')}</span>`
+        //             const lineNumber = note.lineNumber + 1;
+        //             let viewOnGithubString = ''
+        //             if (repoUrl && note.commit != null) {
+        //                 const githubUrl = gitHelper.getGithubFileCommitUrl(
+        //                                     repoUrl,
+        //                                     note.commit!, 
+        //                                     vscode.workspace.asRelativePath(filePath),
+        //                                     note.lineNumber);
+        //                 viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
+        //             }
+        //             markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${note.fileText} ${noteContent} ${viewOnGithubString}`);
+        //         });
+        //     }
+            
+        //     markdownLines.push('');
+        // }
+        return markdownLines;
+    }
+
+    // Adds readme content inplace
+    INDENT_SPACE = 2;
+    private generateMarkdownForTree(markdownLines: string[], 
+        repoUrl: string | null, 
+        tree: { [key: string]: any }, 
+        indentNum: number) {
+        const indent = ' '.repeat(indentNum)
+        for (const key of Object.keys(tree).sort()) {
+            if (key === '__notes' || key === '__missingNotes' || key === '__file_path') continue;
+            markdownLines.push(`${indent}- ${key}`);
+            this.generateMarkdownForTree(markdownLines, repoUrl, tree[key], indentNum + this.INDENT_SPACE);
+
+            const filePath = tree[key].__file_path
+            const notes = tree[key].__notes
+            const missingNotes = tree[key].__missingNotes
+            if (notes != null && notes.length > 0) {
+                notes.sort((a: Note, b: Note) => b.updatedAt - a.updatedAt);
+                for (const note of notes) {
+                    const noteContent = `<span style="color: #FFB6C1;">// ${note.note.replace(/\n/g, ' ')}</span>`;
                     const lineNumber = note.lineNumber + 1;
+                    const formattedFilePath = this.formatFilePathLink(filePath);
                     let viewOnGithubString = '';
                     if (repoUrl && note.commit != null) {
                         const githubUrl = gitHelper.getGithubFileCommitUrl(
@@ -333,23 +417,18 @@ class NotesViewer {
                                             note.lineNumber);
                         viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
                     }
-                    markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${note.fileText} ${noteContent} ${viewOnGithubString}`);
-                });
+                    markdownLines.push(`${indent}  - [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${this.escapeHtml(note.fileText)} ${noteContent} ${viewOnGithubString}`);
+                }
             }
-            
-            // Add missing notes for the file, if any
-            if (missingNotesList[filePath]) {
-                markdownLines.push('');
-                markdownLines.push('### Missing Notes');
-                markdownLines.push('');
 
-                const missingNotes = missingNotesList[filePath];
-                missingNotes.sort((a, b) => a.lineNumber - b.lineNumber);
-
-                missingNotes.forEach(note => {
-                    const noteContent = `<span style="color: #FFB6C1;">// ${note.note.replace(/\n/g, ' ')}</span>`
+            if (missingNotes != null && missingNotes.length > 0) {
+                markdownLines.push(`${indent}  - Unmatched Notes`);
+                missingNotes.sort((a: Note, b: Note) => a.lineNumber - b.lineNumber);
+                for (const note of missingNotes) {
+                    const noteContent = `<span style="color: #FFB6C1;">// ${note.note.replace(/\n/g, ' ')}</span>`;
                     const lineNumber = note.lineNumber + 1;
-                    let viewOnGithubString = ''
+                    const formattedFilePath = this.formatFilePathLink(filePath);
+                    let viewOnGithubString = '';
                     if (repoUrl && note.commit != null) {
                         const githubUrl = gitHelper.getGithubFileCommitUrl(
                                             repoUrl,
@@ -358,13 +437,26 @@ class NotesViewer {
                                             note.lineNumber);
                         viewOnGithubString = githubUrl.length > 0 ? `[[View on Remote]](${githubUrl})` : '';
                     }
-                    markdownLines.push(`- [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${note.fileText} ${noteContent} ${viewOnGithubString}`);
-                });
+                    markdownLines.push(`${indent}  - [Line ${lineNumber}](vscode://file/${formattedFilePath}:${lineNumber}): ${this.escapeHtml(note.fileText)} ${noteContent} ${viewOnGithubString}`);
+                }
             }
-            
-            markdownLines.push('');
         }
-        return markdownLines;
+    }
+
+    /**
+     * Escapes HTML special characters in a string.
+     * @param text The text to escape.
+     * @returns The escaped text.
+     */
+    private escapeHtml(text: string): string {
+        const map: { [char: string]: string } = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, (char) => map[char]);
     }
 }
 
