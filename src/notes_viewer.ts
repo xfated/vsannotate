@@ -303,7 +303,7 @@ class NotesViewer {
         }
         
         // Sort file names in alphabetical order
-        const allFileNames = new Set([...Object.keys(allNotesList), ...Object.keys(missingNotesList)])
+        const allFileNames = new Set([...Object.keys(allNotesList), ...Object.keys(missingNotesList)]);
         const sortedFileNames = Array.from(allFileNames).sort();
  
         // Generate Markdown content
@@ -315,7 +315,7 @@ class NotesViewer {
         const tree: { [key: string]: any } = {};
 
         for (const filePath of sortedFileNames) {
-            const relativePath = vscode.workspace.asRelativePath(filePath)
+            const relativePath = vscode.workspace.asRelativePath(filePath);
             const parts = relativePath.split(path.sep);
             let current = tree;
             for (let i = 0; i < parts.length; i++) {
@@ -324,7 +324,7 @@ class NotesViewer {
                 }
                 current = current[parts[i]];
             }
-            current.__file_path = filePath
+            current.__file_path = filePath;
             current.__notes = allNotesList[filePath] || [];
             current.__missingNotes = missingNotesList[filePath] || [];
         }
@@ -392,16 +392,23 @@ class NotesViewer {
     private generateMarkdownForTree(markdownLines: string[], 
         repoUrl: string | null, 
         tree: { [key: string]: any }, 
-        indentNum: number) {
-        const indent = ' '.repeat(indentNum)
+        indentNum: number,
+        filePathPrefix: string = '') {
+        const indent = ' '.repeat(indentNum);
         for (const key of Object.keys(tree).sort()) {
             if (key === '__notes' || key === '__missingNotes' || key === '__file_path') continue;
-            markdownLines.push(`${indent}- ${key}`);
+            const curPath = filePathPrefix.length > 0 ? `${filePathPrefix}/${key}` : key;
+            if (Object.keys(tree[key]).length === 1) {
+                // If only 1 child, we just combine path
+                this.generateMarkdownForTree(markdownLines, repoUrl, tree[key], indentNum, curPath);
+                return;
+            }
+            markdownLines.push(`${indent}- ${curPath}`);
             this.generateMarkdownForTree(markdownLines, repoUrl, tree[key], indentNum + this.INDENT_SPACE);
 
-            const filePath = tree[key].__file_path
-            const notes = tree[key].__notes
-            const missingNotes = tree[key].__missingNotes
+            const filePath = tree[key].__file_path;
+            const notes = tree[key].__notes;
+            const missingNotes = tree[key].__missingNotes;
             if (notes != null && notes.length > 0) {
                 notes.sort((a: Note, b: Note) => b.updatedAt - a.updatedAt);
                 for (const note of notes) {
