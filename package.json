@@ -2,7 +2,7 @@
   "name": "vsannotate",
   "displayName": "VsAnnotate",
   "description": "Write personal notes on code snippets",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "publisher": "xfated",
   "engines": {
     "vscode": "^1.89.0"

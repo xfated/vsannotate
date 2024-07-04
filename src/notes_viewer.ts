@@ -401,7 +401,7 @@ class NotesViewer {
             if (Object.keys(tree[key]).length === 1) {
                 // If only 1 child, we just combine path
                 this.generateMarkdownForTree(markdownLines, repoUrl, tree[key], indentNum, curPath);
-                return;
+                continue;
             }
             markdownLines.push(`${indent}- ${curPath}`);
             this.generateMarkdownForTree(markdownLines, repoUrl, tree[key], indentNum + this.INDENT_SPACE);
